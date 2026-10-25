@@ -1,0 +1,22 @@
+{
+    "language_name": "Français",
+    "ui": {
+        "notifications": {
+            "item_found": "Vous obtenez: [[item]]"
+        },
+        "file_select": {
+            "start_randomizer": "Commencer le Randomizer",
+            "generate_seed": "Générer une nouvelle seed pour le Randomizer",
+            "open_settings": "Ouvrir les paramètres du Randomizer",
+            "generating": "Génération en cours...",
+            "no_seed_desktop": "Aucune Seed de Randomizer actuellement disponible.\nGénérez-en une dans les \"Randomizer Settings\"\nou glissez un spoilerlog sur la fenêtre du jeu.",
+            "no_seed_console": "Aucune Seed de Randomizer actuellement disponible.\nGénérez-en une dans les \"Randomizer Settings\".",
+            "presets": {
+                "title": "Découvrez nos préréglages !",
+                "message": "Ship propose de nombreuses options, désactivées par défaut,\nmême dans le Randomizer. Nous recommandons le préréglage\n\"Enhancements - Curated Randomizer\" pour une expérience soignée.\n\nVous pouvez ensuite adapter les autres options dans le menu Échap.",
+                "button1": "Voir les préréglages",
+                "button2": "Compris, je veux jouer !"
+            }
+        }
+    }
+}

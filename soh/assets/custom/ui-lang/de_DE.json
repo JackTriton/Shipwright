@@ -1,0 +1,22 @@
+{
+    "language_name": "Deutsch",
+    "ui": {
+        "notifications": {
+            "item_found": "Du erhältst: [[item]]"
+        },
+        "file_select": {
+            "start_randomizer": "Randomizer starten",
+            "generate_seed": "Neuen Randomizer Seed generieren",
+            "open_settings": "Randomizer Optionen öffnen",
+            "generating": "Generiere...",
+            "no_seed_desktop": "Kein Randomizer Seed gefunden.\nBitte generiere zuerst einen,\noder ziehe ein Spoiler Log\nauf das Spielfenster.",
+            "no_seed_console": "Kein Randomizer Seed gefunden.\nBitte generiere zuerst einen.",
+            "presets": {
+                "title": "Sieh dir unsere Voreinstellungen an!",
+                "message": "Ship bietet viele Optionen, die standardmäßig auch im Randomizer\nnicht aktiviert sind. Wir empfehlen die Voreinstellung\n\"Enhancements - Curated Randomizer\" für ein abgestimmtes Spielerlebnis.\n\nWeitere Anpassungen findest du im ESC-Menü.",
+                "button1": "Voreinstellungen öffnen",
+                "button2": "Verstanden, los geht's!"
+            }
+        }
+    }
+}
