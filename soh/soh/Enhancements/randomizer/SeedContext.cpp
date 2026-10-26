@@ -285,7 +285,7 @@ void Context::AddExcludedOptions() {
         Option* excludedOption = loc.GetExcludedOption();
         auto& areaOptions = Settings::GetInstance()->GetExcludeOptionsForArea(loc.GetArea());
         const bool alreadyAdded = std::any_of(areaOptions.begin(), areaOptions.end(), [&](const Option* option) {
-            return option->GetName() == excludedOption->GetName();
+            return option->GetKey() == excludedOption->GetKey();
         });
         if (!alreadyAdded) {
             areaOptions.push_back(excludedOption);

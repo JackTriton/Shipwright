@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/GameLanguage.h"
 #include "spoiler_log.hpp"
 
 #include "../dungeon.h"
@@ -69,7 +70,7 @@ static void WriteLocation(std::string sphere, const RandomizerCheck locationKey,
     Rando::ItemLocation* itemLocation = Rando::Context::GetInstance()->GetItemLocation(locationKey);
 
     jsonData["playthrough"][sphere][location->GetName()] =
-        itemLocation->GetPlacedItemName().GetForLanguage(gSaveContext.language);
+        itemLocation->GetPlacedItemName().GetForLanguage(GameLanguage_Get());
 }
 
 // Writes a shuffled entrance to the specified node
@@ -121,7 +122,7 @@ static void WriteShuffledEntrance(std::string sphereString, Entrance* entrance) 
         jsonData["entrances"].push_back(reverseEntranceJson);
     }
 
-    switch (gSaveContext.language) {
+    switch (GameLanguage_Get()) {
         case LANGUAGE_ENG:
         case LANGUAGE_GER:
         case LANGUAGE_FRA:
@@ -138,7 +139,8 @@ static void WriteSettings() {
     for (const Rando::Option& option : options) {
         // skip unassigned settings (RSK_NONE)
         if (option.GetOptionCount() > 0) {
-            jsonData["settings"][option.GetName()] = option.GetOptionText(ctx->GetOption(option.GetKey()).Get());
+            jsonData["settings"][option.GetCanonicalName()] =
+                option.GetCanonicalOptionText(ctx->GetOption(option.GetKey()).Get());
         }
     }
 }
@@ -171,7 +173,8 @@ static void WriteStartingInventory() {
     for (const Rando::OptionGroup* subGroup : optionGroup.GetSubGroups()) {
         if (subGroup->GetContainsType() == Rando::OptionGroupType::DEFAULT) {
             for (Rando::Option* option : subGroup->GetOptions()) {
-                jsonData["settings"][option->GetName()] = option->GetOptionText(ctx->GetOption(option->GetKey()).Get());
+                jsonData["settings"][option->GetCanonicalName()] =
+                    option->GetCanonicalOptionText(ctx->GetOption(option->GetKey()).Get());
             }
         }
     }
@@ -185,7 +188,7 @@ static void WriteEnabledTricks() {
         if (ctx->GetTrickOption(static_cast<RandomizerTrick>(setting->GetKey())).IsNot(RO_GENERIC_ON)) {
             continue;
         }
-        jsonData["enabledTricks"].push_back(RemoveLineBreaks(setting->GetName()).c_str());
+        jsonData["enabledTricks"].push_back(RemoveLineBreaks(setting->GetCanonicalName()).c_str());
     }
 }
 
@@ -206,7 +209,7 @@ static void WriteChosenOptions() {
     auto ctx = Rando::Context::GetInstance();
     for (const auto& trial : ctx->GetTrials()->GetTrialList()) {
         if (trial->IsRequired()) {
-            std::string trialName = trial->GetName().GetForCurrentLanguage(MF_CLEAN);
+            std::string trialName = trial->GetName().GetEnglish(MF_CLEAN);
             jsonData["requiredTrials"].push_back(RemoveLineBreaks(trialName));
         }
     }
@@ -253,7 +256,7 @@ static void WriteAllLocations() {
     auto ctx = Rando::Context::GetInstance();
     for (const RandomizerCheck key : ctx->allLocations) {
         Rando::ItemLocation* location = ctx->GetItemLocation(key);
-        std::string placedItemName = location->GetPlacedItemName().GetForLanguage(gSaveContext.language);
+        std::string placedItemName = location->GetPlacedItemName().GetForLanguage(GameLanguage_Get());
 
         // If it's a simple item (not an ice trap, doesn't have a price)
         // just add the name of the item and move on
@@ -280,11 +283,10 @@ static void WriteAllLocations() {
             auto& locationJson =
                 jsonData["locations"][Rando::StaticData::GetLocation(location->GetRandomizerCheck())->GetName()];
             auto& itemOverride = ctx->overrides[location->GetRandomizerCheck()];
-            locationJson["model"] = Rando::StaticData::RetrieveItem(itemOverride.LooksLike())
-                                        .GetName()
-                                        .GetForLanguage(gSaveContext.language);
-            locationJson["trickName"] = itemOverride.GetTrickName().GetForLanguage(gSaveContext.language);
-            locationJson["trickArticle"] = itemOverride.GetTrickArticle().GetForLanguage(gSaveContext.language);
+            locationJson["model"] =
+                Rando::StaticData::RetrieveItem(itemOverride.LooksLike()).GetName().GetForLanguage(GameLanguage_Get());
+            locationJson["trickName"] = itemOverride.GetTrickName().GetForLanguage(GameLanguage_Get());
+            locationJson["trickArticle"] = itemOverride.GetTrickArticle().GetForLanguage(GameLanguage_Get());
         }
     }
 }

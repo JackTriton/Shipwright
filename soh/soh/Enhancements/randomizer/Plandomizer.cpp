@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/Lang.h"
 #include <vector>
 #include <fstream>
 #include <filesystem>
@@ -884,7 +885,7 @@ void PlandomizerDrawIceTrapSetup(uint32_t index) {
             plandoLogData[index].iceTrapName =
                 Rando::Traps::GetTrapName(plandoLogData[index].iceTrapModel.GetRandomizerGet(),
                                           RO_ICE_TRAP_NAMES_SIMILAR)
-                    .name.GetForLanguage(CVarGetInteger(CVAR_SETTING("Languages"), 0))
+                    .name.GetForLanguage(Lang::GetUIResourceLanguage())
                     .c_str();
         }
         ImGui::SameLine();
