@@ -104,8 +104,11 @@ void GroupJapanesePunctuation(std::vector<Token>& tokens) {
         if (IsBoundary(token.code)) {
             previous = 0;
         } else if (token.width > 0) {
-            token.breakBefore = !previous || (!JapaneseMessageLayout::CannotEndLine(previous) &&
-                                              !JapaneseMessageLayout::CannotStartLine(token.code));
+            token.breakBefore =
+                !previous ||
+                (!(JapaneseMessageLayout::IsAsciiWord(previous) && JapaneseMessageLayout::IsAsciiWord(token.code)) &&
+                 !JapaneseMessageLayout::CannotEndLine(previous) &&
+                 !JapaneseMessageLayout::CannotStartLine(token.code));
             previous = token.code;
         }
     }
@@ -134,8 +137,9 @@ bool RequiresUnicode(const std::string& text) {
     return std::any_of(tokens.begin(), tokens.end(), [](const auto& token) { return token.code > 0xFF; });
 }
 
-std::string Format(const std::string& text, bool japaneseFont) {
-    auto tokens = Tokens(text, japaneseFont);
+std::string Format(const std::string& text, bool japaneseFont, std::optional<uint8_t> itemIcon) {
+    const std::string requestedIcon = itemIcon ? std::string{ '\x13', static_cast<char>(*itemIcon) } : "";
+    auto tokens = Tokens(itemIcon ? requestedIcon + text : text, japaneseFont);
     if (japaneseFont)
         GroupJapanesePunctuation(tokens);
     const bool hasIcon =
@@ -150,12 +154,12 @@ std::string Format(const std::string& text, bool japaneseFont) {
     int pageUnits = 0;
     const auto page = [&] {
         result += '\x04';
-        if (japaneseFont)
+        if (japaneseFont || itemIcon)
             result += icon;
         result += color;
         line = 1;
         width = 0;
-        pageUnits = japaneseFont ? icon.size() + color.size() : 0;
+        pageUnits = japaneseFont || itemIcon ? icon.size() + color.size() : 0;
     };
     const auto newline = [&](int upcomingUnits = 0) {
         if (line == maxLines || pageUnits + 1 + upcomingUnits > 100)
@@ -177,10 +181,11 @@ std::string Format(const std::string& text, bool japaneseFont) {
         if (token.code == 0x04 || token.code == 0x0C) {
             result += token.text;
             color.clear();
-            icon.clear();
+            icon = requestedIcon;
+            result += icon;
             line = 1;
             width = 0;
-            pageUnits = 0;
+            pageUnits = icon.size();
         } else if (token.code == 0x01) {
             newline();
         } else {

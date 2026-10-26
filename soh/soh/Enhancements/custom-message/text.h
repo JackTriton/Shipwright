@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 #include <stdint.h>
+#include <nlohmann/json_fwd.hpp>
 
 class Text {
   public:
@@ -48,3 +49,8 @@ class Text {
     std::map<std::string, std::string> locales;
     std::vector<std::reference_wrapper<std::string>> AllTexts();
 };
+
+// Keep legacy language fields readable by older saves; additional locales are
+// stored alongside them. Reading also accepts old single-language seed strings.
+void to_json(nlohmann::json& json, const Text& text);
+void from_json(const nlohmann::json& json, Text& text);

@@ -11,6 +11,7 @@ void LoadCatalog();
 
 // Catalog-backed construction preserves the existing language slots and
 // formatting metadata. Message bodies and names live only in game-lang JSON.
+// Complete messages also inherit locale-specific message_layout alignment rules.
 CustomMessage CreateMessage(const std::string& key, TextBoxType type = TEXTBOX_TYPE_BLACK,
                             TextBoxPosition position = TEXTBOX_POS_BOTTOM);
 CustomMessage CreateMessage(const std::string& key, std::vector<std::string> colors, std::vector<bool> capital = {},

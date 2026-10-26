@@ -4,6 +4,7 @@
 #include "soh/Enhancements/Lang/Lang.h"
 #include "soh/Enhancements/Lang/TranslationCatalog.h"
 #include "spdlog/spdlog.h"
+#include <optional>
 
 namespace {
 
@@ -22,6 +23,47 @@ std::string ResolveOverride(const std::string& locale, const std::string& key, c
         return CustomMessages::DecodeGameText(*text);
     }
     return defaultText;
+}
+
+std::optional<MessageAlignment> ReadAlignment(const std::string& locale, const std::string& path) {
+    const auto* value = CustomMessages::GetGameTextCatalog().FindExact(locale, path);
+    if (value == nullptr)
+        return std::nullopt;
+    if (*value == "auto")
+        return MESSAGE_ALIGNMENT_AUTO;
+    if (*value == "left")
+        return MESSAGE_ALIGNMENT_LEFT;
+    if (*value == "center")
+        return MESSAGE_ALIGNMENT_CENTER;
+    if (*value == "right")
+        return MESSAGE_ALIGNMENT_RIGHT;
+    SPDLOG_WARN("Invalid game message alignment ({}) at ({}:{}); using auto", *value, locale, path);
+    return MESSAGE_ALIGNMENT_AUTO;
+}
+
+std::optional<MessageAlignment> FindAlignment(const std::string& locale, std::string key) {
+    while (!key.empty()) {
+        if (auto alignment = ReadAlignment(locale, "message_layout.messages." + key + ".alignment"))
+            return alignment;
+        const auto separator = key.rfind('.');
+        if (separator == std::string::npos)
+            break;
+        key.resize(separator);
+    }
+    return std::nullopt;
+}
+
+CustomMessage ApplyAlignment(CustomMessage result, const std::string& key, const std::string& fallbackKey = "") {
+    for (const auto& locale : CustomMessages::GetGameTextCatalog().GetLanguages()) {
+        auto alignment = FindAlignment(locale, key);
+        if (!alignment && !fallbackKey.empty())
+            alignment = FindAlignment(locale, fallbackKey);
+        if (!alignment && result.GetAlignment(locale) == MESSAGE_ALIGNMENT_AUTO)
+            alignment = ReadAlignment(locale, "message_layout.alignment");
+        if (alignment)
+            result.SetAlignment(locale, *alignment);
+    }
+    return result;
 }
 
 template <typename Message>
@@ -43,17 +85,19 @@ void LoadCatalog() {
 }
 
 CustomMessage CreateMessage(const std::string& key, TextBoxType type, TextBoxPosition position) {
-    return AddLocales(CustomMessage(GetEnglishText(key), ResolveOverride("de_DE", key, TODO_TRANSLATE),
-                                    ResolveOverride("fr_FR", key, TODO_TRANSLATE), type, position),
-                      key);
+    auto result = AddLocales(CustomMessage(GetEnglishText(key), ResolveOverride("de_DE", key, TODO_TRANSLATE),
+                                           ResolveOverride("fr_FR", key, TODO_TRANSLATE), type, position),
+                             key);
+    return ApplyAlignment(std::move(result), key);
 }
 
 CustomMessage CreateMessage(const std::string& key, std::vector<std::string> colors, std::vector<bool> capital,
                             TextBoxType type, TextBoxPosition position) {
-    return AddLocales(CustomMessage(GetEnglishText(key), ResolveOverride("de_DE", key, TODO_TRANSLATE),
-                                    ResolveOverride("fr_FR", key, TODO_TRANSLATE), std::move(colors),
-                                    std::move(capital), type, position),
-                      key);
+    auto result = AddLocales(CustomMessage(GetEnglishText(key), ResolveOverride("de_DE", key, TODO_TRANSLATE),
+                                           ResolveOverride("fr_FR", key, TODO_TRANSLATE), std::move(colors),
+                                           std::move(capital), type, position),
+                             key);
+    return ApplyAlignment(std::move(result), key);
 }
 
 Text CreateText(const std::string& key) {
@@ -78,20 +122,23 @@ CustomMessage GetMessage(const std::string& key, const std::string& fallbackKey,
     const std::string english = ResolveMessage("en_US", key, fallbackKey);
     const std::string german = ResolveMessage("de_DE", key, fallbackKey);
     const std::string french = ResolveMessage("fr_FR", key, fallbackKey);
-    return AddLocales(CustomMessage(english, german, french, type, position), key, fallbackKey);
+    return ApplyAlignment(AddLocales(CustomMessage(english, german, french, type, position), key, fallbackKey), key,
+                          fallbackKey);
 }
 
 CustomMessage GetMessageOrDefault(const std::string& key, const CustomMessage& defaultMessage) {
     const std::string english = ResolveOverride("en_US", key, defaultMessage.GetEnglish(MF_RAW));
     const std::string german = ResolveOverride("de_DE", key, defaultMessage.GetGerman(MF_RAW));
     const std::string french = ResolveOverride("fr_FR", key, defaultMessage.GetFrench(MF_RAW));
-    CustomMessage result(english, german, french, defaultMessage.GetColors(), defaultMessage.GetCapital(),
-                         defaultMessage.GetTextBoxType(), defaultMessage.GetTextBoxPosition());
+    CustomMessage result = defaultMessage;
+    result.SetForLocale("en_US", english);
+    result.SetForLocale("de_DE", german);
+    result.SetForLocale("fr_FR", french);
     for (const auto& locale : GetGameTextCatalog().GetLanguages()) {
         if (locale != "en_US" && locale != "de_DE" && locale != "fr_FR")
             result.SetForLocale(locale, ResolveOverride(locale, key, defaultMessage.GetForLocale(locale, MF_RAW)));
     }
-    return result;
+    return ApplyAlignment(std::move(result), key);
 }
 
 } // namespace CustomMessages

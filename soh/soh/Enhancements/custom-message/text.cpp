@@ -2,9 +2,33 @@
 #include "soh/Enhancements/Lang/LanguagePolicy.h"
 #include "soh/ShipUtils.h"
 #include <functional>
+#include <nlohmann/json.hpp>
 #include "z64.h"
 
 Text::Text() = default;
+
+void to_json(nlohmann::json& json, const Text& text) {
+    json = { { "english", text.GetEnglish() },
+             { "french", text.GetFrench() },
+             { "german", text.GetGerman() },
+             { "spanish", text.GetSpanish() },
+             { "locales", text.GetLocales() } };
+}
+
+void from_json(const nlohmann::json& json, Text& text) {
+    Text result;
+    if (json.is_string()) {
+        result = Text(json.get<std::string>());
+    } else if (json.is_object()) {
+        result = Text(json.value("english", ""), json.value("french", ""), json.value("german", ""),
+                      json.value("spanish", ""));
+        if (json.contains("locales")) {
+            for (const auto& [locale, value] : json.at("locales").items())
+                result.SetForLocale(locale, value.get<std::string>());
+        }
+    }
+    text = std::move(result);
+}
 
 Text::Text(std::string english_, std::string french_, std::string german_)
     : english(std::move(english_)), french(std::move(french_)), german(std::move(german_)), spanish("") {

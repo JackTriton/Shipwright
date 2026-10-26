@@ -226,7 +226,7 @@ void Message_HandleChoiceSelection(PlayState* play, u8 numChoices) {
     } else if (ABS(input->rel.stick_y) < 30) {
         sAnalogStickHeld = false;
     }
-    msgCtx->textPosX = R_TEXT_CHOICE_XPOS;
+    msgCtx->textPosX = GameMessage_GetChoiceX(msgCtx->choiceIndex, R_TEXT_CHOICE_XPOS);
     msgCtx->textPosY =
         (numChoices == 1) ? R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex + 1) : R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex);
 }
@@ -694,101 +694,7 @@ void Message_DrawTextboxIcon(PlayState* play, Gfx** p, s16 x, s16 y) {
 }
 
 f32 sFontWidths[144] = {
-    8.0f,  // ' '
-    8.0f,  // '!'
-    6.0f,  // '"'
-    9.0f,  // '#'
-    9.0f,  // '$'
-    14.0f, // '%'
-    12.0f, // '&'
-    3.0f,  // '''
-    7.0f,  // '('
-    7.0f,  // ')'
-    7.0f,  // '*'
-    9.0f,  // '+'
-    4.0f,  // ','
-    6.0f,  // '-'
-    4.0f,  // '.'
-    9.0f,  // '/'
-    10.0f, // '0'
-    5.0f,  // '1'
-    9.0f,  // '2'
-    9.0f,  // '3'
-    10.0f, // '4'
-    9.0f,  // '5'
-    9.0f,  // '6'
-    9.0f,  // '7'
-    9.0f,  // '8'
-    9.0f,  // '9'
-    6.0f,  // ':'
-    6.0f,  // ';'
-    9.0f,  // '<'
-    11.0f, // '='
-    9.0f,  // '>'
-    11.0f, // '?'
-    13.0f, // '@'
-    12.0f, // 'A'
-    9.0f,  // 'B'
-    11.0f, // 'C'
-    11.0f, // 'D'
-    8.0f,  // 'E'
-    8.0f,  // 'F'
-    12.0f, // 'G'
-    10.0f, // 'H'
-    4.0f,  // 'I'
-    8.0f,  // 'J'
-    10.0f, // 'K'
-    8.0f,  // 'L'
-    13.0f, // 'M'
-    11.0f, // 'N'
-    13.0f, // 'O'
-    9.0f,  // 'P'
-    13.0f, // 'Q'
-    10.0f, // 'R'
-    10.0f, // 'S'
-    9.0f,  // 'T'
-    10.0f, // 'U'
-    11.0f, // 'V'
-    15.0f, // 'W'
-    11.0f, // 'X'
-    10.0f, // 'Y'
-    10.0f, // 'Z'
-    7.0f,  // '['
-    10.0f, // '\'
-    7.0f,  // ']'
-    10.0f, // '^'
-    9.0f,  // '_'
-    5.0f,  // '`'
-    8.0f,  // 'a'
-    9.0f,  // 'b'
-    8.0f,  // 'c'
-    9.0f,  // 'd'
-    9.0f,  // 'e'
-    6.0f,  // 'f'
-    9.0f,  // 'g'
-    8.0f,  // 'h'
-    4.0f,  // 'i'
-    6.0f,  // 'j'
-    8.0f,  // 'k'
-    4.0f,  // 'l'
-    12.0f, // 'm'
-    9.0f,  // 'n'
-    9.0f,  // 'o'
-    9.0f,  // 'p'
-    9.0f,  // 'q'
-    7.0f,  // 'r'
-    8.0f,  // 's'
-    7.0f,  // 't'
-    8.0f,  // 'u'
-    9.0f,  // 'v'
-    12.0f, // 'w'
-    8.0f,  // 'x'
-    9.0f,  // 'y'
-    8.0f,  // 'z'
-    7.0f,  // '{'
-    5.0f,  // '|'
-    7.0f,  // '}'
-    10.0f, // '~'
+#include "soh/Enhancements/custom-message/NativeMessageAsciiWidths.inc"
     10.0f, // '‾'
     12.0f, // 'À'
     6.0f,  // 'î'
@@ -1290,7 +1196,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
     Font* font = &play->msgCtx.font;
     Gfx* gfx = *gfxP;
 
-    play->msgCtx.textPosX = R_TEXT_INIT_XPOS;
+    play->msgCtx.textPosX = GameMessage_GetLineStart(0, R_TEXT_INIT_XPOS);
 
     if (!sTextIsCredits) {
         msgCtx->textPosY = R_TEXT_INIT_YPOS;
@@ -1326,6 +1232,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                     msgCtx->textPosX += 32;
                 }
                 msgCtx->textPosY += R_TEXT_LINE_SPACING;
+                msgCtx->textPosX = GameMessage_GetLineStart(i + 1, msgCtx->textPosX);
                 break;
             case MESSAGE_COLOR:
                 Message_SetTextColor(msgCtx, msgCtx->msgBufDecoded[++i] & 0xF);
@@ -1572,7 +1479,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                 return;
             // #region SOH [NTSC] - support multiple file name languages
             case MESSAGE_NAME:
-                if (ResourceMgr_GetGameRegion(0) == GAME_REGION_NTSC &&
+                if ((MessageLanguage_UsesUnicode() || ResourceMgr_GetGameRegion(0) == GAME_REGION_NTSC) &&
                     gSaveContext.ship.filenameLanguage == NAME_LANGUAGE_NTSC_JPN) {
                     if (msgCtx->msgMode == MSGMODE_TEXT_DISPLAYING && i + 1 == msgCtx->textDrawPos &&
                         msgCtx->textDelayTimer == msgCtx->textDelay) {
@@ -1660,6 +1567,25 @@ bool Message_DecodeName(PlayState* play, s16* decodedBufPosPtr, s32* charTexIdxP
         if (gSaveContext.playerName[playerNameLen - 1] != emptyChar) {
             break;
         }
+    }
+
+    // Added UTF-8 messages use the byte decoder even in Japanese. Preserve a
+    // Japanese save name as native full-width glyphs instead of entering the
+    // PAL conversion below, which deliberately removes kana for legacy text.
+    if (MessageLanguage_UsesUnicode() && gSaveContext.ship.filenameLanguage == NAME_LANGUAGE_NTSC_JPN) {
+        for (i = 0; i < playerNameLen; i++) {
+            const char* texture = Font_GetNameCharTexture(gSaveContext.playerName[i]);
+            memset(&font->charTexBuf[*charTexIdxPtr], 0, FONT_CHAR_TEX_SIZE);
+            if (texture != NULL) {
+                memcpy(&font->charTexBuf[*charTexIdxPtr], texture, strlen(texture) + 1);
+            } else {
+                Font_LoadChar(font, '?' - ' ', *charTexIdxPtr);
+            }
+            msgCtx->msgBufDecoded[(*decodedBufPosPtr)++] = MESSAGE_NAME;
+            *charTexIdxPtr += FONT_CHAR_TEX_SIZE;
+        }
+        (*decodedBufPosPtr)--;
+        return true;
     }
 
     if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL &&
@@ -2198,10 +2124,11 @@ void Message_DecodeJPN(PlayState* play) {
                 }
             }
         } else if (curChar == MESSAGE_ITEM_ICON_JPN) {
-            msgCtx->msgBufDecodedWide[++decodedBufPos] = font->msgBufWide[msgCtx->msgBufPos + 1];
-            if (GameInteractor_Should(VB_LOAD_ITEM_ICON, (uint8_t)font->msgBuf[msgCtx->msgBufPos + 1] < ITEM_CUSTOM,
-                                      MessageLanguage_IsEnglishFallback())) {
-                Message_LoadItemIcon(play, font->msgBufWide[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
+            // msgBufPos counts 16-bit words on this path, including later pages.
+            const u16 itemId = font->msgBufWide[msgCtx->msgBufPos + 1];
+            msgCtx->msgBufDecodedWide[++decodedBufPos] = itemId;
+            if (GameInteractor_Should(VB_LOAD_ITEM_ICON, itemId < ITEM_CUSTOM, MessageLanguage_IsEnglishFallback())) {
+                Message_LoadItemIcon(play, itemId, R_TEXTBOX_Y + 10);
             }
         } else if (curChar == MESSAGE_BACKGROUND_JPN) {
             msgCtx->textboxBackgroundIdx = font->msgBufWide[msgCtx->msgBufPos + 1] * 2;
@@ -2291,10 +2218,10 @@ void Message_Decode(PlayState* play) {
 
     while (true) {
         phi_s1 = temp_s2 = msgCtx->msgBufDecoded[decodedBufPos] = font->msgBuf[msgCtx->msgBufPos];
-        if (MessageLanguage_UsesUnicode() &&
-            ((u8)temp_s2 >= 0x80 || (MessageLanguage_Get() == LANGUAGE_JPN && temp_s2 > ' '))) {
-            size_t consumed = GameMessage_DecodeGlyph(font->msgBuf + msgCtx->msgBufPos,
-                font->msgLength - msgCtx->msgBufPos, font->charTexBuf + charTexIdx, decodedBufPos);
+        if (MessageLanguage_UsesUnicode() && (u8)temp_s2 >= 0x80) {
+            size_t consumed =
+                GameMessage_DecodeGlyph(font->msgBuf + msgCtx->msgBufPos, font->msgLength - msgCtx->msgBufPos,
+                                        font->charTexBuf + charTexIdx, decodedBufPos);
             if (consumed > 0) {
                 msgCtx->msgBufDecoded[decodedBufPos++] = '?';
                 charTexIdx += FONT_CHAR_TEX_SIZE;
@@ -2650,12 +2577,12 @@ void Message_Decode(PlayState* play) {
             }
             decodedBufPos--;
         } else if (temp_s2 == MESSAGE_ITEM_ICON) {
-            msgCtx->msgBufDecoded[++decodedBufPos] = font->msgBuf[msgCtx->msgBufPos + 1];
+            const u8 itemId = (u8)font->msgBuf[msgCtx->msgBufPos + 1];
+            msgCtx->msgBufDecoded[++decodedBufPos] = itemId;
             osSyncPrintf("ITEM_NO=(%d) (%d)\n", msgCtx->msgBufDecoded[decodedBufPos],
                          font->msgBuf[msgCtx->msgBufPos + 1]);
-            if (GameInteractor_Should(VB_LOAD_ITEM_ICON, (uint8_t)font->msgBuf[msgCtx->msgBufPos + 1] < ITEM_CUSTOM,
-                                      MessageLanguage_IsEnglishFallback())) {
-                Message_LoadItemIcon(play, font->msgBuf[msgCtx->msgBufPos + 1], R_TEXTBOX_Y + 10);
+            if (GameInteractor_Should(VB_LOAD_ITEM_ICON, itemId < ITEM_CUSTOM, MessageLanguage_IsEnglishFallback())) {
+                Message_LoadItemIcon(play, itemId, R_TEXTBOX_Y + 10);
             }
         } else if (temp_s2 == MESSAGE_BACKGROUND) {
             msgCtx->textboxBackgroundIdx = font->msgBuf[msgCtx->msgBufPos + 1] * 2;
@@ -2707,6 +2634,11 @@ void Message_Decode(PlayState* play) {
         }
         decodedBufPos++;
         msgCtx->msgBufPos++;
+    }
+    if (MessageLanguage_UsesUnicode() && MessageLanguage_UsesJapaneseLayout() && !sTextIsCredits) {
+        GameMessage_AlignPage(msgCtx->msgBufDecoded, msgCtx->decodedTextLen + 1, sFontWidths, ARRAY_COUNT(sFontWidths),
+                              R_TEXT_CHAR_SCALE / 100.0f, CVarGetInteger(CVAR_ENHANCEMENT("TextSpacing"), 6),
+                              R_TEXT_INIT_XPOS - (msgCtx->choiceNum == 3 ? 32 : 0));
     }
 }
 

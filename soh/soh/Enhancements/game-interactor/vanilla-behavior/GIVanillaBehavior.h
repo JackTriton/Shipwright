@@ -3785,7 +3785,7 @@ typedef enum {
 
     // #### `result`
     // ```c
-    // (uint8_t)font->msgBuf[msgCtx->msgBufPos + 1] >= ITEM_CUSTOM
+    // itemId < ITEM_CUSTOM (read from the active byte/16-bit message buffer)
     // ```
     // #### `args`
     // - uint8_t (whether the active message uses the English fallback)

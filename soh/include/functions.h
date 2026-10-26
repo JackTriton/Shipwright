@@ -905,6 +905,7 @@ void KaleidoSetup_Init(PlayState* play);
 void KaleidoSetup_Destroy(PlayState* play);
 void Font_LoadCharWide(Font* font, u16 arg1, u16 arg2);
 const char* Font_GetCharWideTexture(u16 character);
+const char* Font_GetNameCharTexture(u8 character);
 void Font_LoadChar(Font* font, u8 character, u16 codePointIndex);
 void Font_LoadMessageBoxIcon(Font* font, u16 icon);
 void Font_LoadOrderedFont(Font* font);

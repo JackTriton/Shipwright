@@ -189,6 +189,16 @@ void CustomMessage::SetForLocale(const std::string& locale, std::string text) {
 const std::map<std::string, std::string>& CustomMessage::GetLocales() const {
     return locales;
 }
+void CustomMessage::SetAlignment(const std::string& locale, MessageAlignment alignment) {
+    if (alignment == MESSAGE_ALIGNMENT_AUTO)
+        alignments.erase(locale);
+    else
+        alignments[locale] = alignment;
+}
+MessageAlignment CustomMessage::GetAlignment(const std::string& locale) const {
+    const auto found = alignments.find(locale);
+    return found == alignments.end() ? MESSAGE_ALIGNMENT_AUTO : found->second;
+}
 bool CustomMessage::HasLocale(const std::string& locale) const {
     if (locale == "en_US")
         return !messages[LANGUAGE_ENG].starts_with(TODO_TRANSLATE);
@@ -228,10 +238,10 @@ void CustomMessage::IncludeLocales(const CustomMessage& other) {
         if (!locales.contains(locale))
             locales[locale] = messages[LANGUAGE_ENG];
 }
-void CustomMessage::FormatUnicode(std::string& text, const std::string& locale) const {
+void CustomMessage::FormatUnicode(std::string& text, const std::string& locale, std::optional<uint8_t> itemIcon) const {
     ReplaceColors(text);
     ReplaceAltarIcons(text);
-    text = UnicodeMessage::Format(text, locale == "ja_JP");
+    text = UnicodeMessage::Format(text, locale == "ja_JP", itemIcon);
 }
 
 const std::vector<std::string> CustomMessage::GetAllMessages(MessageFormat format) const {
@@ -292,10 +302,8 @@ CustomMessage CustomMessage::operator+(const CustomMessage& right) const {
 }
 
 CustomMessage CustomMessage::operator+(const std::string& right) const {
-    CustomMessage result(messages[LANGUAGE_ENG] + right, messages[LANGUAGE_GER] + right,
-                         messages[LANGUAGE_FRA] + right);
-    for (const auto& [locale, text] : locales)
-        result.SetForLocale(locale, text + right);
+    CustomMessage result = *this;
+    result += right;
     return result;
 }
 
@@ -357,10 +365,26 @@ void CustomMessage::LoadIntoFont(const std::string& locale) {
         language = LanguagePolicy_LegacyText(LanguagePolicy_FromLocale(locale.c_str()));
         text = GetForLanguage(language, MF_RAW);
     }
-    if (unicode)
+    if (unicode) {
         MessageLanguage_SetUnicode(language);
-    else
+        auto alignment = GetAlignment(locale);
+        if (alignment == MESSAGE_ALIGNMENT_AUTO) {
+            alignment = MESSAGE_ALIGNMENT_CENTER;
+            // Inspect the complete formatted message once, skipping operands.
+            // Choice prompts stay left-aligned even on preceding pages.
+            for (size_t cursor = 0; cursor < text.size();) {
+                const auto code = static_cast<unsigned char>(text[cursor]);
+                if (code == 0x1B || code == 0x1C) {
+                    alignment = MESSAGE_ALIGNMENT_LEFT;
+                    break;
+                }
+                cursor += code < 0x20 ? UnicodeMessage::ControlSize(code) : 1;
+            }
+        }
+        MessageLanguage_SetAlignment(alignment);
+    } else {
         MessageLanguage_Set(language);
+    }
     msgCtx->msgLength = font->msgLength =
         static_cast<u32>(SohUtils::CopyStringToCharBuffer(buffer, text, maxBufferSize));
 }
@@ -413,8 +437,7 @@ void CustomMessage::Format(ItemID iid) {
         ReplaceAltarIcons(str);
     }
     for (auto& [locale, text] : locales) {
-        text.insert(0, ITEM_OBTAINED(iid));
-        FormatUnicode(text, locale);
+        FormatUnicode(text, locale, static_cast<uint8_t>(iid));
     }
     for (auto& text : messages)
         text += MESSAGE_END();
@@ -437,11 +460,25 @@ void CustomMessage::AutoFormat() {
 }
 
 void CustomMessage::AutoFormat(ItemID iid) {
-    for (std::string& str : AllMessages()) {
-        str.insert(0, ITEM_OBTAINED(iid));
+    const auto icon = ITEM_OBTAINED(iid);
+    for (std::string& str : messages) {
+        str.insert(0, icon);
+        AutoFormatString(str);
+        // Legacy pages still get their icon here, but a control operand whose
+        // value is 0x04/0x0C is not a page break (including the icon ID itself).
+        for (size_t cursor = 0; cursor < str.size();) {
+            const auto code = static_cast<unsigned char>(str[cursor]);
+            cursor += code < 0x20 ? UnicodeMessage::ControlSize(code) : 1;
+            if (code == 0x04 || code == 0x0C) {
+                str.insert(cursor, icon);
+                cursor += icon.size();
+            }
+        }
     }
-    AutoFormat();
-    Replace(WAIT_FOR_INPUT(), WAIT_FOR_INPUT() + ITEM_OBTAINED(iid));
+    // The Unicode formatter owns both authored and automatic continuations.
+    // Do not insert icons again after it has already repeated them.
+    for (auto& [locale, text] : locales)
+        FormatUnicode(text, locale, static_cast<uint8_t>(iid));
 }
 
 void CustomMessage::Clean() {

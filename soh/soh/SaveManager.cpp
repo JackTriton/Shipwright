@@ -19,6 +19,7 @@
 #include "Enhancements/randomizer/entrance.h"
 #include "Enhancements/randomizer/dungeon.h"
 #include "Enhancements/randomizer/trial.h"
+#include "Enhancements/randomizer/Traps.h"
 #include "soh/util.h"
 #include "Enhancements/randomizer/hint.h"
 #include "soh/Enhancements/randomizer/settings.h"
@@ -235,19 +236,13 @@ void SaveManager::LoadRandomizer() {
             RandomizerGet rg = RG_NONE;
             SaveManager::Instance->LoadData("fakeRgID", rg, RG_NONE);
             if (rg != RG_NONE) {
-                randoContext->overrides.emplace(static_cast<RandomizerCheck>(i),
-                                                Rando::ItemOverride(static_cast<RandomizerCheck>(i), rg));
-                SaveManager::Instance->LoadStruct("trickName", [&]() {
-                    SaveManager::Instance->LoadData("english", randoContext->GetItemOverride(i).GetTrickName().english);
-                    SaveManager::Instance->LoadData("german", randoContext->GetItemOverride(i).GetTrickName().german);
-                    SaveManager::Instance->LoadData("french", randoContext->GetItemOverride(i).GetTrickName().french);
-                });
-                SaveManager::Instance->LoadStruct("trickArticle", [&]() {
-                    Text& article = randoContext->GetItemOverride(i).GetTrickArticle();
-                    SaveManager::Instance->LoadData("english", article.english);
-                    SaveManager::Instance->LoadData("german", article.german);
-                    SaveManager::Instance->LoadData("french", article.french);
-                });
+                randoContext->overrides.insert_or_assign(static_cast<RandomizerCheck>(i),
+                                                         Rando::ItemOverride(static_cast<RandomizerCheck>(i), rg));
+                auto& itemOverride = randoContext->GetItemOverride(i);
+                SaveManager::Instance->LoadData("trickName", itemOverride.GetTrickName());
+                SaveManager::Instance->LoadData("trickArticle", itemOverride.GetTrickArticle());
+                Rando::Traps::RestoreTrapNameTranslations(rg, itemOverride.GetTrickName(),
+                                                          itemOverride.GetTrickArticle());
             }
             uint16_t price = 0;
             SaveManager::Instance->LoadData("price", price, (uint16_t)0);
@@ -374,22 +369,8 @@ void SaveManager::SaveRandomizer(const SaveContext& saveContext, int sectionID, 
             SaveManager::Instance->SaveData("rgID", randoContext->GetItemLocation(i)->GetPlacedRandomizerGet());
             if (randoContext->GetItemLocation(i)->GetPlacedRandomizerGet() == RG_ICE_TRAP) {
                 SaveManager::Instance->SaveData("fakeRgID", randoContext->GetItemOverride(i).LooksLike());
-                SaveManager::Instance->SaveStruct("trickName", [&]() {
-                    SaveManager::Instance->SaveData("english",
-                                                    randoContext->GetItemOverride(i).GetTrickName().GetEnglish());
-                    SaveManager::Instance->SaveData("german",
-                                                    randoContext->GetItemOverride(i).GetTrickName().GetGerman());
-                    SaveManager::Instance->SaveData("french",
-                                                    randoContext->GetItemOverride(i).GetTrickName().GetFrench());
-                });
-                SaveManager::Instance->SaveStruct("trickArticle", [&]() {
-                    SaveManager::Instance->SaveData("english",
-                                                    randoContext->GetItemOverride(i).GetTrickArticle().GetEnglish());
-                    SaveManager::Instance->SaveData("german",
-                                                    randoContext->GetItemOverride(i).GetTrickArticle().GetGerman());
-                    SaveManager::Instance->SaveData("french",
-                                                    randoContext->GetItemOverride(i).GetTrickArticle().GetFrench());
-                });
+                SaveManager::Instance->SaveData("trickName", randoContext->GetItemOverride(i).GetTrickName());
+                SaveManager::Instance->SaveData("trickArticle", randoContext->GetItemOverride(i).GetTrickArticle());
             }
             if (randoContext->GetItemLocation(i)->IsExcluded()) {
                 SaveManager::Instance->SaveData("excluded", true);

@@ -69,8 +69,7 @@ static void WriteLocation(std::string sphere, const RandomizerCheck locationKey,
     Rando::Location* location = Rando::StaticData::GetLocation(locationKey);
     Rando::ItemLocation* itemLocation = Rando::Context::GetInstance()->GetItemLocation(locationKey);
 
-    jsonData["playthrough"][sphere][location->GetName()] =
-        itemLocation->GetPlacedItemName().GetForLanguage(GameLanguage_Get());
+    jsonData["playthrough"][sphere][location->GetName()] = itemLocation->GetPlacedItemName().GetEnglish();
 }
 
 // Writes a shuffled entrance to the specified node
@@ -256,7 +255,7 @@ static void WriteAllLocations() {
     auto ctx = Rando::Context::GetInstance();
     for (const RandomizerCheck key : ctx->allLocations) {
         Rando::ItemLocation* location = ctx->GetItemLocation(key);
-        std::string placedItemName = location->GetPlacedItemName().GetForLanguage(GameLanguage_Get());
+        std::string placedItemName = location->GetPlacedItemName().GetEnglish();
 
         // If it's a simple item (not an ice trap, doesn't have a price)
         // just add the name of the item and move on
@@ -283,10 +282,11 @@ static void WriteAllLocations() {
             auto& locationJson =
                 jsonData["locations"][Rando::StaticData::GetLocation(location->GetRandomizerCheck())->GetName()];
             auto& itemOverride = ctx->overrides[location->GetRandomizerCheck()];
-            locationJson["model"] =
-                Rando::StaticData::RetrieveItem(itemOverride.LooksLike()).GetName().GetForLanguage(GameLanguage_Get());
-            locationJson["trickName"] = itemOverride.GetTrickName().GetForLanguage(GameLanguage_Get());
-            locationJson["trickArticle"] = itemOverride.GetTrickArticle().GetForLanguage(GameLanguage_Get());
+            locationJson["model"] = Rando::StaticData::RetrieveItem(itemOverride.LooksLike()).GetName().GetEnglish();
+            locationJson["trickName"] = itemOverride.GetTrickName().GetEnglish();
+            locationJson["trickArticle"] = itemOverride.GetTrickArticle().GetEnglish();
+            locationJson["trickNameTranslations"] = nlohmann::json(itemOverride.GetTrickName());
+            locationJson["trickArticleTranslations"] = nlohmann::json(itemOverride.GetTrickArticle());
         }
     }
 }

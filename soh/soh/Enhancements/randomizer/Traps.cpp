@@ -2056,6 +2056,60 @@ Rando::Traps::TrickName Rando::Traps::GetTrapName(RandomizerGet id, RandoIceTrap
     return { name, article };
 }
 
+static bool MatchesSavedName(const Text& saved, const Text& candidate) {
+    if (saved.GetEnglish().empty())
+        return false;
+    if (saved.GetEnglish() == candidate.GetEnglish() || saved.GetEnglish() == candidate.GetFrench() ||
+        saved.GetEnglish() == candidate.GetGerman())
+        return true;
+    for (const auto& [locale, value] : candidate.GetLocales())
+        if (saved.GetEnglish() == value)
+            return true;
+    return false;
+}
+
+static void RestoreTextTranslations(Text& saved, const Text& candidate, bool localizedString) {
+    // Old seed files may store one localized string in every legacy slot.
+    // Existing independent French/German translations and explicit locales win.
+    const bool collapsed = saved.GetFrench() == saved.GetEnglish() && saved.GetGerman() == saved.GetEnglish();
+    if (localizedString && collapsed)
+        saved.SetForLocale("en_US", candidate.GetEnglish());
+    if (collapsed) {
+        saved.SetForLocale("fr_FR", candidate.GetFrench());
+        saved.SetForLocale("de_DE", candidate.GetGerman());
+    }
+    for (const auto& [locale, value] : candidate.GetLocales())
+        if (!saved.GetLocales().contains(locale))
+            saved.SetForLocale(locale, value);
+}
+
+bool Rando::Traps::RestoreTrapNameTranslations(RandomizerGet id, Text& name, Text& article) {
+    if (id <= RG_NONE || id >= RG_MAX)
+        return false;
+    if (!initTrickNames) {
+        InitTrickNames();
+        initTrickNames = true;
+    }
+    const auto restore = [&](const TrickName& candidate) {
+        if (!MatchesSavedName(name, candidate.name))
+            return false;
+        const bool localizedString = name.GetEnglish() != candidate.name.GetEnglish();
+        RestoreTextTranslations(name, candidate.name, localizedString);
+        RestoreTextTranslations(article, candidate.article, localizedString);
+        return true;
+    };
+    for (const auto& candidate : trickNameTable[id])
+        if (restore(candidate))
+            return true;
+    // Unchanged/revealed trap names use the real item rather than the joke pool.
+    for (const auto itemId : { id, RG_ICE_TRAP }) {
+        const auto& item = Rando::StaticData::RetrieveItem(itemId);
+        if (restore({ item.GetName(), item.GetArticle() }))
+            return true;
+    }
+    return false;
+}
+
 RandomizerGet Rando::Traps::GetTrapTrickModel(uint64_t* state) {
     auto ctx = Rando::Context::GetInstance();
     RandomizerGet trickModel = ShipUtils::RandomElementFromSet(ctx->possibleIceTrapModels, state);

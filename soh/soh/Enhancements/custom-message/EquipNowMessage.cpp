@@ -13,8 +13,11 @@ extern "C" size_t GetEquipNowMessage(char* buffer, char* src, const size_t maxBu
 
     std::string postfix = customMessage.GetForCurrentLanguage();
     const std::string locale = GameLanguage_GetMessageLocale();
-    if (locale != "en_US" && locale != "de_DE" && locale != "fr_FR" && customMessage.HasLocale(locale))
+    if (locale != "en_US" && locale != "de_DE" && locale != "fr_FR" && customMessage.HasLocale(locale)) {
         MessageLanguage_SetUnicode(GameLanguage_Get());
+        const auto alignment = customMessage.GetAlignment(locale);
+        MessageLanguage_SetAlignment(alignment == MESSAGE_ALIGNMENT_AUTO ? MESSAGE_ALIGNMENT_LEFT : alignment);
+    }
     std::string str;
     std::string FixedBaseStr(src);
     size_t RemoveControlChar = FixedBaseStr.find_first_of("\x02");

@@ -13,12 +13,26 @@ constexpr int LineWidth(bool icon) {
     return (icon ? 16 * 14 : 16 * 16) * 88 / 100;
 }
 
+inline constexpr float AsciiWidths[] = {
+#include "NativeMessageAsciiWidths.inc"
+};
+static_assert(sizeof(AsciiWidths) / sizeof(AsciiWidths[0]) == 95);
+
+constexpr bool IsAscii(uint32_t scalar) {
+    return scalar >= 0x21 && scalar <= 0x7E;
+}
+
+constexpr bool IsAsciiWord(uint32_t scalar) {
+    return (scalar >= 'A' && scalar <= 'Z') || (scalar >= 'a' && scalar <= 'z') || (scalar >= '0' && scalar <= '9') ||
+           scalar == '\'' || scalar == '"';
+}
+
 constexpr uint32_t Canonical(uint32_t scalar) {
-    if (scalar == '"')
+    if (scalar == U'＂')
         return U'”';
-    if (scalar == '\'')
+    if (scalar == U'＇')
         return U'’';
-    return scalar >= 0x21 && scalar <= 0x7E ? scalar + 0xFEE0 : scalar;
+    return scalar;
 }
 
 constexpr int DrawOffset(uint32_t scalar) {
@@ -39,6 +53,10 @@ constexpr int DrawOffset(uint32_t scalar) {
 }
 
 constexpr int Advance(uint32_t scalar, float scale = FontScale) {
+    // Ordinary ASCII uses the native Latin font, not a full-width alias.
+    // Keep the integer rounding identical to the game's draw loop.
+    if (IsAscii(scalar))
+        return static_cast<int>(AsciiWidths[scalar - ' '] * scale);
     int advance;
     switch (Canonical(scalar)) {
         case U'　':
@@ -73,12 +91,12 @@ constexpr int Advance(uint32_t scalar, float scale = FontScale) {
 
 inline bool CannotStartLine(uint32_t scalar) {
     constexpr std::u32string_view punctuation =
-        U"、。，．？！：；）］｝」』】〉》〕〗〙〛’”ー々ヽヾゝゞァィゥェォッャュョヮぁぃぅぇぉっゃゅょゎ";
+        U",.!?:;)]}、。，．？！：；）］｝」』】〉》〕〗〙〛’”ー々ヽヾゝゞァィゥェォッャュョヮぁぃぅぇぉっゃゅょゎ";
     return punctuation.find(static_cast<char32_t>(Canonical(scalar))) != std::u32string_view::npos;
 }
 
 inline bool CannotEndLine(uint32_t scalar) {
-    constexpr std::u32string_view punctuation = U"（［｛「『【〈《〔〖〘〚‘“";
+    constexpr std::u32string_view punctuation = U"([{（［｛「『【〈《〔〖〘〚‘“";
     return punctuation.find(static_cast<char32_t>(Canonical(scalar))) != std::u32string_view::npos;
 }
 } // namespace JapaneseMessageLayout

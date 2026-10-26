@@ -1,5 +1,22 @@
 {
     "language_name": "日本語",
+    "message_layout": {
+        "alignment": "auto",
+        "messages": {
+            "randomizer": {
+                "messages": {
+                    "merchant_messages": {
+                        "alignment": "left"
+                    }
+                }
+            },
+            "enhancements": {
+                "better_bombchu_shopping": {
+                    "alignment": "left"
+                }
+            }
+        }
+    },
     "messages": {
         "randomizer": {
             "get_item": {
