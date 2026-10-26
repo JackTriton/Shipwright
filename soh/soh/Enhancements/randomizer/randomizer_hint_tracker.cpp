@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/Lang.h"
 #include <algorithm>
 #include <cctype>
 #include <map>
@@ -52,7 +53,7 @@ static bool doAreaScroll = false;
 // Formatted hint text is cached per hint; invalidated on file load/init and
 // when the game language changes. Only touched from the draw thread.
 static std::unordered_map<RandomizerHint, std::string> hintTextCache;
-static uint8_t cachedLanguage = 0xFF;
+static std::string cachedUILanguage;
 
 static WidgetInfo backgroundColorWidget;
 static WidgetInfo windowTypeWidget;
@@ -221,7 +222,7 @@ static const std::string& GetJoinedHintText(RandomizerHint hintKey) {
         msg.Replace(" kaufen ", "");
         msg.Replace(" kaufen", "");
         msg.Replace("@", playerName);
-        std::string part = msg.GetForCurrentLanguage(MF_CLEAN);
+        std::string part = msg.GetForUILanguage(MF_CLEAN);
         // Variants of a hint often share the same wording give or take
         // punctuation (e.g. Saria's in-person and ocarina messages); show
         // each distinct wording once.
@@ -289,7 +290,7 @@ static std::string ItemCategoryRankName(int rank) {
         &lesserItemsLabel,     // ITEM_CATEGORY_LESSER
         &junkItemsLabel,       // ITEM_CATEGORY_JUNK
     };
-    return rankLabels[rank]->GetForCurrentLanguage(MF_CLEAN);
+    return rankLabels[rank]->GetForUILanguage(MF_CLEAN);
 }
 
 static void DrawHintEntry(const HintEntry& entry) {
@@ -348,7 +349,7 @@ static HintTrackerViewMode DrawViewTabs() {
     static bool tabRestored = false;
     auto drawTab = [&](const CustomMessage& label, const char* id, HintTrackerViewMode mode, const char* tooltip) {
         ImGuiTabItemFlags flags = (!tabRestored && viewMode == mode) ? ImGuiTabItemFlags_SetSelected : 0;
-        if (ImGui::BeginTabItem((label.GetForCurrentLanguage(MF_CLEAN) + id).c_str(), nullptr, flags)) {
+        if (ImGui::BeginTabItem((label.GetForUILanguage(MF_CLEAN) + id).c_str(), nullptr, flags)) {
             if (viewMode != mode && tabRestored) {
                 viewMode = mode;
                 CVarSetInteger(CVAR_TRACKER_HINT("ViewMode"), mode);
@@ -420,12 +421,12 @@ static void DrawHintList() {
         hintSearch.Clear();
     }
 
-    if (gSaveContext.language != cachedLanguage) {
+    if (cachedUILanguage != Lang::GetUILanguage()) {
         hintTextCache.clear();
-        cachedLanguage = gSaveContext.language;
+        cachedUILanguage = Lang::GetUILanguage();
     }
 
-    const std::string otherHintsName = otherHintsLabel.GetForCurrentLanguage(MF_CLEAN);
+    const std::string otherHintsName = otherHintsLabel.GetForUILanguage(MF_CLEAN);
     bool journalView = viewMode == HINT_TRACKER_VIEW_JOURNAL;
 
     struct HintGroup {
@@ -474,7 +475,7 @@ static void DrawHintList() {
                     if (!hintName.empty()) {
                         hintName += ", ";
                     }
-                    hintName += hint->GetAreaName(static_cast<uint8_t>(slot)).GetForCurrentLanguage(MF_CLEAN);
+                    hintName += hint->GetAreaName(static_cast<uint8_t>(slot)).GetForUILanguage(MF_CLEAN);
                 }
                 compact = !hintName.empty();
                 if (compact) {
@@ -508,7 +509,7 @@ static void DrawHintList() {
             }
         }
         if (hintName.empty()) {
-            hintName = Rando::StaticData::hintNames[hintKey].GetForCurrentLanguage(MF_CLEAN);
+            hintName = Rando::StaticData::hintNames[hintKey].GetForUILanguage(MF_CLEAN);
         }
         HintGroup& group = groups[effectiveKey];
         if (group.name.empty()) {
@@ -548,13 +549,13 @@ static void DrawHintList() {
     };
     auto typeGroupName = [](HintType type) {
         if (type == HINT_TYPE_ITEM || type == HINT_TYPE_ITEM_AREA) {
-            return itemsLabel.GetForCurrentLanguage(MF_CLEAN);
+            return itemsLabel.GetForUILanguage(MF_CLEAN);
         }
         // Upstream calls the junk hint type "Message"; "Junk" is clearer here.
         if (type == HINT_TYPE_HINT_KEY) {
-            return junkLabel.GetForCurrentLanguage(MF_CLEAN);
+            return junkLabel.GetForUILanguage(MF_CLEAN);
         }
-        return Rando::StaticData::hintTypeNames[type].GetForCurrentLanguage(MF_CLEAN);
+        return Rando::StaticData::hintTypeNames[type].GetForUILanguage(MF_CLEAN);
     };
 
     std::set<RandomizerHint> stoneHintKeys;
@@ -589,15 +590,15 @@ static void DrawHintList() {
     }
 
     if (showTotals) {
-        ImGui::Text("%zu / %zu %s", readCount, totalHints, hintsReadLabel.GetForCurrentLanguage(MF_CLEAN).c_str());
+        ImGui::Text("%zu / %zu %s", readCount, totalHints, hintsReadLabel.GetForUILanguage(MF_CLEAN).c_str());
     }
 
     if (totalHints == 0) {
-        ImGui::TextWrapped("%s", noHintsMessage.GetForCurrentLanguage(MF_CLEAN).c_str());
+        ImGui::TextWrapped("%s", noHintsMessage.GetForUILanguage(MF_CLEAN).c_str());
         return;
     }
     if (journalView && readCount == 0) {
-        ImGui::TextWrapped("%s", journalEmptyMessage.GetForCurrentLanguage(MF_CLEAN).c_str());
+        ImGui::TextWrapped("%s", journalEmptyMessage.GetForUILanguage(MF_CLEAN).c_str());
         return;
     }
 
@@ -671,9 +672,9 @@ void HintTrackerWindow::DrawElement() {
             CVarGetInteger(CVAR_TRACKER_HINT("Draggable"), 1))) {
         ImGui::SetWindowFontScale(CVarGetFloat(CVAR_TRACKER_HINT("FontSize"), 1.0f));
         if (!GameInteractor::IsSaveLoaded()) {
-            ImGui::TextUnformatted(waitingMessage.GetForCurrentLanguage(MF_CLEAN).c_str());
+            ImGui::TextUnformatted(waitingMessage.GetForUILanguage(MF_CLEAN).c_str());
         } else if (!IS_RANDO) {
-            ImGui::TextWrapped("%s", randoOnlyMessage.GetForCurrentLanguage(MF_CLEAN).c_str());
+            ImGui::TextWrapped("%s", randoOnlyMessage.GetForUILanguage(MF_CLEAN).c_str());
         } else {
             DrawHintList();
         }

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string>
+#include <map>
+#include <functional>
+#include <vector>
 #include <stdint.h>
 
 class Text {
@@ -15,6 +18,10 @@ class Text {
     const std::string& GetGerman() const;
     const std::string& GetSpanish() const;
     const std::string& GetForLanguage(uint8_t language) const;
+
+    const std::string& GetForLocale(const std::string& locale) const;
+    void SetForLocale(const std::string& locale, std::string text);
+    const std::map<std::string, std::string>& GetLocales() const;
 
     Text operator+(const Text& right) const;
     Text operator+(const std::string& right) const;
@@ -36,4 +43,8 @@ class Text {
     std::string french = "";
     std::string german = "";
     std::string spanish = "";
+
+  private:
+    std::map<std::string, std::string> locales;
+    std::vector<std::reference_wrapper<std::string>> AllTexts();
 };

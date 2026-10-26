@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/Lang.h"
 #include <algorithm>
 #include <array>
 #include <map>
@@ -1214,9 +1215,7 @@ void DrawItem(ItemTrackerItem item) {
                 hasItem = IsSilverCleared(static_cast<RandomizerGet>(item.id)) &&
                           (!hideMax || OTRGlobals::Instance->gRandomizer->GetRandoSettingValue(RSK_SHUFFLE_SILVER) !=
                                            RO_SHUFFLE_SILVER_ON);
-                itemName = Rando::StaticData::RetrieveItem(static_cast<RandomizerGet>(actualItemId))
-                               .GetName()
-                               .GetForLanguage(CVarGetInteger(CVAR_SETTING("Languages"), LANGUAGE_ENG));
+                itemName = Rando::StaticData::RetrieveItem(static_cast<RandomizerGet>(actualItemId)).GetNameForUI();
                 break;
             case RG_BRONZE_SCALE:
                 itemName = "Swim";
@@ -1816,7 +1815,7 @@ void ItemTrackerWindow::Draw() {
     if (!IsVisible()) {
         return;
     }
-    ImGui::PushFont(OTRGlobals::Instance->fontMono);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMono));
     DrawElement();
     // Sync up the IsVisible flag if it was changed by ImGui
     SyncVisibilityConsoleVariable();

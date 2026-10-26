@@ -1,174 +1,159 @@
-#include <memory>
+#include <map>
+#include <mutex>
+#include <set>
+#include <nlohmann/json.hpp>
 
 #include <libultraship/bridge/consolevariablebridge.h>
-#include "ship/Context.h"
-#include "ship/resource/File.h"
-#include "ship/resource/type/Json.h"
-#include "ship/utils/StringHelper.h"
 
 #include "Lang.h"
-#include "soh/SohGui/MenuTypes.h"
-#include "soh/SohGui/SohMenu.h"
-#include "soh/util.h"
+#include "BuiltinUICatalog.h"
+#include "TranslationCatalog.h"
+#include "LanguagePolicy.h"
+#include "soh/cvar_prefixes.h"
 #include "spdlog/spdlog.h"
 
-namespace SohGui {
-extern std::shared_ptr<SohMenu> mSohMenu;
-}
+namespace {
 
-static bool initialized = false;
-static std::unordered_map<std::string, nlohmann::json> langs;
+bool initialized = false;
+bool selectionInitialized = false;
+bool usingBuiltinCatalog = false;
+std::mutex diagnosticsMutex;
+std::set<std::pair<std::string, std::string>> reportedMissing;
+Lang::TranslationCatalog catalog;
+std::map<std::string, std::string> languageNames;
 
-static std::unordered_map<std::string, std::string> cache;
-
-#define LANGUAGE_CVAR CVAR_SETTING("Language")
-#define DEFAULT_LANGUAGE "en_US"
-
-std::variant<std::reference_wrapper<const std::string>, Lang::Error> Lang::TryTranslate(const char* path) {
-    if (!initialized) {
-        SPDLOG_ERROR("Tried to obtain a translation before the translation data is initialized");
-        assert(false);
-        return Lang::Error::LanguageDataNotInitialized;
-    }
-
-    std::string currentLang = CVarGetString(LANGUAGE_CVAR, DEFAULT_LANGUAGE);
-
-    if (!langs.contains(currentLang)) {
-        SPDLOG_WARN("Current language ({}) doesn't exist, trying to fall back to default language ({})",
-                    currentLang.c_str(), DEFAULT_LANGUAGE);
-
-        currentLang = DEFAULT_LANGUAGE;
-
-        if (!langs.contains(currentLang)) {
-            SPDLOG_ERROR("Default language ({}) doesn't exist", DEFAULT_LANGUAGE);
-            assert(false);
-            return Lang::Error::LanguageDataNotFound;
-        }
-
-        CVarSetString(LANGUAGE_CVAR, DEFAULT_LANGUAGE);
-        SPDLOG_WARN("Fallback to default language ({}) was succesful", DEFAULT_LANGUAGE);
-    }
-
-    std::string stringPath = std::string(path);
-
-    if (cache.contains(stringPath)) {
-        return cache[stringPath];
-    }
-
-    const nlohmann::json* currentLangData = &langs.at(currentLang);
-
-    std::vector<std::string> segments = SohUtils::StringSplit(stringPath, ".");
-
-    std::string lastSegment = segments[segments.size() - 1];
-
-    segments.pop_back();
-
-    for (const auto& segment : segments) {
-        if (!currentLangData->contains(segment)) {
-            return Lang::Error::PathDataNotFound;
-        }
-
-        currentLangData = &currentLangData->at(segment);
-    }
-
-    if (!currentLangData->contains(lastSegment)) {
-        return Lang::Error::PathDataNotFound;
-    }
-
-    if (currentLangData->at(lastSegment).is_string()) {
-        const std::string& translatedString = currentLangData->at(lastSegment).get_ref<const std::string&>();
-        cache[stringPath] = translatedString;
-        return cache[stringPath];
-    }
-
-    if (currentLangData->at(lastSegment).is_array()) {
-        std::string translatedString = "";
-
-        for (const auto& item : currentLangData->at(lastSegment)) {
-            if (!item.is_string()) {
-                return Lang::Error::PathInvalidValue;
-            }
-
-            translatedString += item.get_ref<const std::string&>();
-        }
-
-        cache[stringPath] = translatedString;
-        return cache[stringPath];
-    }
-
-    return Lang::Error::PathInvalidValue;
-}
-
+constexpr const char* LANGUAGE_CVAR = CVAR_SETTING("UILanguage");
+constexpr const char* LEGACY_LANGUAGE_CVAR = CVAR_SETTING("Language");
+constexpr const char* DEFAULT_LANGUAGE = "en_US";
+constexpr const char* UI_CATALOG_FOLDER = "ui-lang";
 const std::string errorMessage =
     "[ERROR] Couldn't retrieve language data for this item, check the log for more information.";
 
-const std::string& Lang::Translate(const char* path) {
-    auto value = Lang::TryTranslate(path);
+} // namespace
 
-    if (std::holds_alternative<std::reference_wrapper<const std::string>>(value)) {
-        return std::get<std::reference_wrapper<const std::string>>(value);
-    } else if (std::holds_alternative<Lang::Error>(value)) {
-        switch (std::get<Lang::Error>(value)) {
-            case Lang::Error::PathDataNotFound:
-                SPDLOG_WARN("Current language ({}) doesn't have data for the requested path ({})",
-                            CVarGetString(LANGUAGE_CVAR, DEFAULT_LANGUAGE), path);
-                break;
-            case Lang::Error::PathInvalidValue:
-                SPDLOG_WARN("Current language ({}) has an array with a non-string at the requested path ({})",
-                            CVarGetString(LANGUAGE_CVAR, DEFAULT_LANGUAGE), path);
-                break;
-            default:
-                break;
-        }
-
-        return errorMessage;
-    } else {
-        assert(false);
-        return errorMessage;
-    }
+std::variant<std::reference_wrapper<const std::string>, Lang::Error> Lang::TryTranslate(const char* path) {
+    return TryTranslateForLanguage(path, GetUILanguage());
 }
 
-void Lang::LoadLangs() {
-    auto initData = std::make_shared<Ship::ResourceInitData>();
-    initData->Format = RESOURCE_FORMAT_BINARY;
-    initData->Type = static_cast<uint32_t>(Ship::ResourceType::Json);
-    initData->ResourceVersion = 0;
-    const static std::string folder = "lang/*";
-    auto langFiles = Ship::Context::GetRawInstance()->GetResourceManager()->GetArchiveManager()->ListFiles(folder);
-    size_t start = std::string(folder).size() - 1;
-    for (size_t i = 0; i < langFiles->size(); i++) {
-        std::string filePath = langFiles->at(i);
-        auto json = std::static_pointer_cast<Ship::Json>(
-            Ship::Context::GetRawInstance()->GetResourceManager()->LoadResource(filePath, true, initData));
+std::variant<std::reference_wrapper<const std::string>, Lang::Error>
+Lang::TryTranslateForLanguage(const char* path, const char* language) {
+    if (!initialized) {
+        return Lang::Error::LanguageDataNotInitialized;
+    }
+    if (!catalog.HasLanguage(DEFAULT_LANGUAGE)) {
+        return Lang::Error::LanguageDataNotFound;
+    }
+    if (path == nullptr || language == nullptr) {
+        return Lang::Error::PathInvalidValue;
+    }
+    if (const auto* text = catalog.Find(language, path)) {
+        return std::cref(*text);
+    }
+    return Lang::Error::PathDataNotFound;
+}
 
-        std::string fileName = filePath.substr(start, filePath.size() - start - 5); // 5 for length of ".json"
-        langs.insert_or_assign(fileName, json->Data);
+const std::string& Lang::Translate(const char* path) {
+    return TranslateForLanguage(path, GetUILanguage());
+}
+
+const std::string& Lang::TranslateForLanguage(const char* path, const char* language) {
+    auto value = TryTranslateForLanguage(path, language);
+    if (std::holds_alternative<std::reference_wrapper<const std::string>>(value)) {
+        return std::get<std::reference_wrapper<const std::string>>(value);
+    }
+    // A missing translation may be requested once per frame. Report each pair
+    // once, without making optional TryTranslate lookups produce any I/O.
+    const std::lock_guard<std::mutex> lock(diagnosticsMutex);
+    if (reportedMissing.emplace(language ? language : "<null>", path ? path : "<null>").second) {
+        SPDLOG_WARN("Couldn't retrieve language data for locale ({}) at path ({})", language ? language : "<null>",
+                    path ? path : "<null>");
+    }
+    return errorMessage;
+}
+
+void Lang::PrepareUICatalogs() {
+    if (initialized) {
+        return;
+    }
+    catalog.AddLanguage(DEFAULT_LANGUAGE, GetBuiltinUICatalog());
+    const auto result = LoadCatalogs(catalog, UI_CATALOG_FOLDER);
+    usingBuiltinCatalog = !result.hasEnglish;
+    for (const auto& language : catalog.GetLanguages()) {
+        if (const auto* name = catalog.FindExact(language, "language_name")) {
+            languageNames.emplace(language, *name);
+        }
     }
     initialized = true;
 }
 
-void LanguageCustomWidget(WidgetInfo& info) {
-    ImGui::Text("Select Language:");
-    for (const auto& [id, data] : langs) {
-        if (ImGui::Button(StringHelper::Sprintf("%s [%s]", data["language_name"].get_ref<const std::string&>().c_str(),
-                                                id.c_str())
-                              .c_str())) {
-            CVarSetString(LANGUAGE_CVAR, id.c_str());
-            cache.clear();
-        }
+bool Lang::IsUsingBuiltinUICatalog() {
+    return usingBuiltinCatalog;
+}
+
+void Lang::LoadLangs() {
+    PrepareUICatalogs();
+    if (selectionInitialized) {
+        return;
+    }
+    selectionInitialized = true;
+    // Initialize() has installed the application's file logger by this point.
+    if (usingBuiltinCatalog) {
+        SPDLOG_WARN("No valid ui-lang/en_US.json in mounted archives; using built-in English UI. "
+                    "Rebuild GenerateSohOtr and deploy the matching soh.o2r beside the executable.");
+    }
+    const std::string configured = CVarGetString(LANGUAGE_CVAR, "");
+    const std::string validLanguage =
+        catalog.ResolveLanguage(configured, CVarGetString(LEGACY_LANGUAGE_CVAR, DEFAULT_LANGUAGE));
+    if (configured != validLanguage && !usingBuiltinCatalog) {
+        CVarSetString(LANGUAGE_CVAR, validLanguage.c_str());
+        CVarSave();
     }
 }
 
-void RegisterLangWidgets() {
-    return;
-
-    // TODO: Improve & enable this when everything is set up
-
-    SohGui::mSohMenu->AddSidebarEntry("Settings", "Language", 1);
-    WidgetPath path = { "Settings", "Language", SECTION_COLUMN_1 };
-    SohGui::mSohMenu->AddWidget(path, "LanguageWidget", WIDGET_CUSTOM)
-        .CustomFunction(LanguageCustomWidget)
-        .HideInSearch(true);
+std::string Lang::GetUIFontText() {
+    PrepareUICatalogs();
+    return catalog.GetFontText();
 }
 
-static RegisterMenuInitFunc menuInitFunc(RegisterLangWidgets);
+const char* Lang::GetUILanguage() {
+    if (!initialized) {
+        return DEFAULT_LANGUAGE;
+    }
+    const char* language = CVarGetString(LANGUAGE_CVAR, DEFAULT_LANGUAGE);
+    return catalog.HasLanguage(language) ? language : DEFAULT_LANGUAGE;
+}
+
+uint64_t Lang::GetUICatalogRevision() {
+    return catalog.GetRevision();
+}
+
+bool Lang::SetUILanguage(const std::string& language) {
+    if (!initialized || !catalog.HasLanguage(language)) {
+        return false;
+    }
+    if (language != GetUILanguage()) {
+        CVarSetString(LANGUAGE_CVAR, language.c_str());
+        CVarSave();
+    }
+    return true;
+}
+
+const std::map<std::string, std::string>& Lang::GetAvailableUILanguages() {
+    return languageNames;
+}
+
+uint8_t Lang::GetUIResourceLanguage() {
+    return LanguagePolicy_FromLocale(GetUILanguage());
+}
+
+uint8_t Lang::GetUILegacyTextLanguage() {
+    return LanguagePolicy_LegacyText(GetUIResourceLanguage());
+}
+
+std::string Lang::TranslateOrFallback(const std::string& path, const std::string& fallback) {
+    const auto result = TryTranslate(path.c_str());
+    if (const auto* text = std::get_if<std::reference_wrapper<const std::string>>(&result)) {
+        return text->get();
+    }
+    return fallback;
+}

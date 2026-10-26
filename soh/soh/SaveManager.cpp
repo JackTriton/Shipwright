@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/GameLanguage.h"
 #include <ship/Context.h>
 #include <fstream>
 #include <filesystem>
@@ -588,6 +589,7 @@ void SaveManager::Init() {
                 LoadData("audioSetting", gSaveContext.audioSetting);
                 LoadData("zTargetSetting", gSaveContext.zTargetSetting);
                 LoadData("language", gSaveContext.language);
+                gSaveContext.language = LanguagePolicy_Normalize(gSaveContext.language);
                 break;
             default:
                 SPDLOG_WARN("Global save has a unrecognized version. We are reconstructing it.");
@@ -844,7 +846,7 @@ void SaveManager::InitFileNormal() {
     gSaveContext.bgsDayCount = 0;
 
     gSaveContext.deaths = 0;
-    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL && gSaveContext.language != LANGUAGE_JPN) {
+    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL && GameLanguage_Get() != LANGUAGE_JPN) {
         for (int i = 0; i < ARRAY_COUNT(gSaveContext.playerName); i++) {
             gSaveContext.playerName[i] = 0x3E;
         }
@@ -854,7 +856,7 @@ void SaveManager::InitFileNormal() {
             gSaveContext.playerName[i] = 0xDF;
         }
         gSaveContext.ship.filenameLanguage =
-            (gSaveContext.language == LANGUAGE_JPN) ? NAME_LANGUAGE_NTSC_JPN : NAME_LANGUAGE_NTSC_ENG;
+            (GameLanguage_Get() == LANGUAGE_JPN) ? NAME_LANGUAGE_NTSC_JPN : NAME_LANGUAGE_NTSC_ENG;
     }
     gSaveContext.healthCapacity = STARTING_HEALTH;
     gSaveContext.health = STARTING_HEALTH;
@@ -1030,14 +1032,14 @@ static void InitDebugSave() {
     gSaveContext.bgsDayCount = 0;
 
     gSaveContext.deaths = 0;
-    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL && gSaveContext.language != LANGUAGE_JPN) {
+    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL && GameLanguage_Get() != LANGUAGE_JPN) {
         const static std::array<u8, 8> sPlayerName = { 0x15, 0x12, 0x17, 0x14, 0x3E, 0x3E, 0x3E, 0x3E };
 
         for (int i = 0; i < ARRAY_COUNT(gSaveContext.playerName); i++) {
             gSaveContext.playerName[i] = sPlayerName[i];
         }
         gSaveContext.ship.filenameLanguage = NAME_LANGUAGE_PAL;
-    } else if (gSaveContext.language == LANGUAGE_JPN) { // Japanese
+    } else if (GameLanguage_Get() == LANGUAGE_JPN) { // Japanese
         const static std::array<u8, 8> sPlayerName = { 0x81, 0x87, 0x61, 0xDF, 0xDF, 0xDF, 0xDF, 0xDF };
 
         for (int i = 0; i < ARRAY_COUNT(gSaveContext.playerName); i++) {
@@ -1051,7 +1053,7 @@ static void InitDebugSave() {
             gSaveContext.playerName[i] = sPlayerName[i];
         }
         gSaveContext.ship.filenameLanguage =
-            (gSaveContext.language == LANGUAGE_JPN) ? NAME_LANGUAGE_NTSC_JPN : NAME_LANGUAGE_NTSC_ENG;
+            (GameLanguage_Get() == LANGUAGE_JPN) ? NAME_LANGUAGE_NTSC_JPN : NAME_LANGUAGE_NTSC_ENG;
     }
     gSaveContext.healthCapacity = 0xE0;
     gSaveContext.health = 0xE0;
@@ -1336,7 +1338,7 @@ void SaveManager::SaveGlobal() {
     globalBlock["version"] = 1;
     globalBlock["audioSetting"] = gSaveContext.audioSetting;
     globalBlock["zTargetSetting"] = gSaveContext.zTargetSetting;
-    globalBlock["language"] = gSaveContext.language;
+    globalBlock["language"] = GameLanguage_Get();
 
     const std::filesystem::path sSavePath(Ship::Context::GetPathRelativeToAppDirectory("Save"));
     const std::filesystem::path sGlobalPath = sSavePath / std::string("global.sav");
@@ -1502,7 +1504,7 @@ int SaveManager::GetSaveSectionID(std::string& sectionName) {
 void SaveManager::CreateDefaultGlobal() {
     gSaveContext.audioSetting = 0;
     gSaveContext.zTargetSetting = 0;
-    gSaveContext.language = CVarGetInteger(CVAR_SETTING("Languages"), LANGUAGE_ENG);
+    gSaveContext.language = GameLanguage_GetConfigured();
 
     SaveGlobal();
 }
@@ -2840,7 +2842,7 @@ void SaveManager::ConvertFromUnversioned() {
     gSaveContext.zTargetSetting = data[SRAM_HEADER_ZTARGET] & 1;
     gSaveContext.language = data[SRAM_HEADER_LANGUAGE];
     if (gSaveContext.language >= LANGUAGE_MAX) {
-        gSaveContext.language = CVarGetInteger(CVAR_SETTING("Languages"), LANGUAGE_ENG);
+        gSaveContext.language = GameLanguage_GetConfigured();
     }
     SaveGlobal();
 

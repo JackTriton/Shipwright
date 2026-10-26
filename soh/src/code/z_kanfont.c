@@ -4142,26 +4142,24 @@ const char* msgStaticTbl[] = {
 };
 // #endregion
 
-/**
- * Loads a texture from kanji for the requested `character` into the character texture buffer
- * at `codePointIndex`. The value of `character` is the SHIFT-JIS encoding of the character.
- */
-void Font_LoadCharWide(Font* font, u16 character, u16 codePointIndex) {
-    // DmaMgr_RequestSync(&font->charTexBuf[codePointIndex], _kanjiSegmentStart + Kanji_OffsetFromShiftJIS(character),
-    // 0x80);
-
-    // #region SOH [NTSC]
-    // This function is called even for non-nstc, but this function would be empty for non-ntsc.
-    // To simulate that, we check if the jpn message table is loaded and if not immediately return.
+/** Returns the native kanji texture reference for a SHIFT-JIS character, or NULL without Japanese assets. */
+const char* Font_GetCharWideTexture(u16 character) {
+    // A PAL-only archive has no Japanese font. Preserve the native loader's
+    // availability check for both ROM text and added UTF-8 messages.
     if (sJpnMessageEntryTablePtr == NULL) {
-        return;
+        return NULL;
     }
-
     s32 charIndex = Kanji_OffsetFromShiftJIS(character);
     charIndex /= FONT_CHAR_TEX_SIZE;
-    if (charIndex < ARRAY_COUNT(kanjiFontTbl))
-        memcpy(&font->charTexBuf[codePointIndex], kanjiFontTbl[charIndex], strlen(kanjiFontTbl[charIndex]) + 1);
-    // #endregion
+    return charIndex >= 0 && charIndex < ARRAY_COUNT(kanjiFontTbl) ? kanjiFontTbl[charIndex] : NULL;
+}
+
+/** Loads a native kanji texture reference into the character texture buffer at codePointIndex. */
+void Font_LoadCharWide(Font* font, u16 character, u16 codePointIndex) {
+    const char* texture = Font_GetCharWideTexture(character);
+    if (texture != NULL) {
+        memcpy(&font->charTexBuf[codePointIndex], texture, strlen(texture) + 1);
+    }
 }
 
 /**

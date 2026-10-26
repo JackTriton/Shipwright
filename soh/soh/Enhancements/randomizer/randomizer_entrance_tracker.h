@@ -64,6 +64,8 @@ typedef struct {
     TrackerEntranceType type;
     std::string metaTag;
     uint8_t oneExit;
+    // Display text is independent of the canonical destination identity above.
+    std::string gameDestinationKey;
 } EntranceData;
 
 typedef enum {

@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/Lang.h"
 #include <array>
 #include <string>
 #include <sstream>
@@ -1577,14 +1578,14 @@ bool ShouldShowCheck(RandomizerCheck check) {
         (!mystery &&
          (itemLoc->GetCheckStatus() == RCSHOW_IDENTIFIED || itemLoc->GetCheckStatus() == RCSHOW_SEEN_OR_HINTED) &&
          itemLoc->GetPlacedRandomizerGet() != RG_ICE_TRAP)) {
-        search += " " + itemLoc->GetPlacedItemName().GetForLanguage(gSaveContext.language);
+        search += " " + itemLoc->GetPlacedItemName().GetForLanguage(Lang::GetUIResourceLanguage());
     } else if (itemLoc->GetCheckStatus() == RCSHOW_IDENTIFIED && !mystery) {
-        search +=
-            OTRGlobals::Instance->gRandoContext->overrides[check].GetTrickName().GetForLanguage(gSaveContext.language);
+        search += OTRGlobals::Instance->gRandoContext->overrides[check].GetTrickName().GetForLanguage(
+            Lang::GetUIResourceLanguage());
     } else if (itemLoc->GetCheckStatus() == RCSHOW_SEEN_OR_HINTED && !mystery) {
         search += Rando::StaticData::RetrieveItem(OTRGlobals::Instance->gRandoContext->overrides[check].LooksLike())
                       .GetName()
-                      .GetForLanguage(gSaveContext.language);
+                      .GetForLanguage(Lang::GetUIResourceLanguage());
     }
     return (IsVisibleInCheckTracker(check) &&
             (checkSearch.Filters.Size == 0 || checkSearch.PassFilter(search.c_str())));
@@ -2278,13 +2279,14 @@ void DrawLocation(RandomizerCheck rc) {
             case RCSHOW_COLLECTED:
             case RCSHOW_SCUMMED:
                 if (IS_RANDO) {
-                    txt = itemLoc->GetPlacedItem().GetName().GetForLanguage(gSaveContext.language);
+                    txt = itemLoc->GetPlacedItem().GetNameForUI();
                 } else {
                     if (IsHeartPiece((GetItemID)Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetItemID())) {
-                        if (gSaveContext.language == LANGUAGE_ENG || gSaveContext.language == LANGUAGE_GER ||
-                            gSaveContext.language == LANGUAGE_JPN) {
+                        if (Lang::GetUIResourceLanguage() == LANGUAGE_ENG ||
+                            Lang::GetUIResourceLanguage() == LANGUAGE_GER ||
+                            Lang::GetUIResourceLanguage() == LANGUAGE_JPN) {
                             txt = Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetName().english;
-                        } else if (gSaveContext.language == LANGUAGE_FRA) {
+                        } else if (Lang::GetUIResourceLanguage() == LANGUAGE_FRA) {
                             txt = Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetName().french;
                         }
                     }
@@ -2306,15 +2308,15 @@ void DrawLocation(RandomizerCheck rc) {
                     if (itemLoc->GetPlacedRandomizerGet() == RG_ICE_TRAP && revealItemName) {
                         if (status == RCSHOW_IDENTIFIED) {
                             txt = OTRGlobals::Instance->gRandoContext->overrides[rc].GetTrickName().GetForLanguage(
-                                gSaveContext.language);
+                                Lang::GetUIResourceLanguage());
                         } else {
                             txt = Rando::StaticData::RetrieveItem(
                                       OTRGlobals::Instance->gRandoContext->overrides[rc].LooksLike())
                                       .GetName()
-                                      .GetForLanguage(gSaveContext.language);
+                                      .GetForLanguage(Lang::GetUIResourceLanguage());
                         }
                     } else if (revealItemName) {
-                        txt = itemLoc->GetPlacedItem().GetName().GetForLanguage(gSaveContext.language);
+                        txt = itemLoc->GetPlacedItem().GetNameForUI();
                     }
                     if (itemLoc->CanBePurchased() && IsVisibleInCheckTracker(rc) && status == RCSHOW_IDENTIFIED) {
                         auto price = OTRGlobals::Instance->gRandoContext->GetItemLocation(rc)->GetPrice();
@@ -2323,10 +2325,11 @@ void DrawLocation(RandomizerCheck rc) {
                     }
                 } else {
                     if (IsHeartPiece((GetItemID)Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetItemID())) {
-                        if (gSaveContext.language == LANGUAGE_ENG || gSaveContext.language == LANGUAGE_GER ||
-                            gSaveContext.language == LANGUAGE_JPN) {
+                        if (Lang::GetUIResourceLanguage() == LANGUAGE_ENG ||
+                            Lang::GetUIResourceLanguage() == LANGUAGE_GER ||
+                            Lang::GetUIResourceLanguage() == LANGUAGE_JPN) {
                             txt = Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetName().english;
-                        } else if (gSaveContext.language == LANGUAGE_FRA) {
+                        } else if (Lang::GetUIResourceLanguage() == LANGUAGE_FRA) {
                             txt = Rando::StaticData::RetrieveItem(loc->GetVanillaItem()).GetName().french;
                         }
                     }

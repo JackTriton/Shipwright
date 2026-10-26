@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/GameLanguage.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/ShipInit.hpp"
 
@@ -88,9 +89,9 @@ void RegisterRocsFeather() {
             *should = true;
             const char* textureName = gRocsFeatherItemNameENGTex;
 
-            if (gSaveContext.language == LANGUAGE_GER) {
+            if (GameLanguage_Get() == LANGUAGE_GER) {
                 textureName = gRocsFeatherItemNameGERTex;
-            } else if (gSaveContext.language == LANGUAGE_FRA) {
+            } else if (GameLanguage_Get() == LANGUAGE_FRA) {
                 textureName = gRocsFeatherItemNameFRATex;
             }
 

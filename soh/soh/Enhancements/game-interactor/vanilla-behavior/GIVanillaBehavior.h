@@ -3788,7 +3788,7 @@ typedef enum {
     // (uint8_t)font->msgBuf[msgCtx->msgBufPos + 1] >= ITEM_CUSTOM
     // ```
     // #### `args`
-    // - uint8_t (sDisplayNextMessageAsEnglish)
+    // - uint8_t (whether the active message uses the English fallback)
     VB_LOAD_ITEM_ICON,
 
     // #### `result`

@@ -1,3 +1,5 @@
+#include "soh/Enhancements/Lang/MessageLanguage.h"
+#include "soh/Enhancements/Lang/LanguagePolicy.h"
 #include <ship/window/Window.h>
 
 #include "MessageViewer.h"
@@ -180,6 +182,10 @@ static const char* msgStaticTbl[] = {
 };
 
 void MessageDebug_StartTextBox(const char* tableId, uint16_t textId, uint8_t language) {
+    MessageLanguage_Begin(language);
+    if (strlen(tableId) != 0) {
+        MessageLanguage_Set(LanguagePolicy_LegacyText(language));
+    }
     PlayState* play = gPlayState;
     static int16_t messageStaticIndices[] = { 0, 1, 3, 2 };
     const auto player = GET_PLAYER(gPlayState);
@@ -194,12 +200,11 @@ void MessageDebug_StartTextBox(const char* tableId, uint16_t textId, uint8_t lan
     R_TEXT_CHAR_SCALE = 75;
     R_TEXT_LINE_SPACING = 12;
     R_TEXT_INIT_XPOS = 65;
-    if (language == LANGUAGE_JPN) {
+    if (MessageLanguage_IsJapanese()) {
         R_TEXT_CHAR_SCALE = 88;
         R_TEXT_LINE_SPACING = 18;
         R_TEXT_INIT_XPOS = 65;
     }
-    char* buffer = font->msgBuf;
     msgCtx->textId = textId;
     if (strlen(tableId) == 0) {
         FindMessage(play, textId, language);
@@ -207,12 +212,13 @@ void MessageDebug_StartTextBox(const char* tableId, uint16_t textId, uint8_t lan
         const uintptr_t src = font->msgOffset;
         memcpy(font->msgBuf, reinterpret_cast<void const*>(src), font->msgLength);
     } else {
-        constexpr size_t maxBufferSize = sizeof(font->msgBuf);
-        const CustomMessage messageEntry = CustomMessageManager::Instance->RetrieveMessage(tableId, textId);
-        font->charTexBuf[0] = (messageEntry.GetTextBoxType() << 4) | messageEntry.GetTextBoxPosition();
-        font->msgLength = static_cast<u32>(
-            SohUtils::CopyStringToCharBuffer(buffer, messageEntry.GetForLanguage(language), maxBufferSize));
-        msgCtx->msgLength = static_cast<int32_t>(font->msgLength);
+        CustomMessage messageEntry = CustomMessageManager::Instance->RetrieveMessage(tableId, textId);
+        messageEntry.LoadIntoFont(LanguagePolicy_Locale(language));
+        if (MessageLanguage_UsesUnicode()) {
+            R_TEXT_CHAR_SCALE = 88;
+            R_TEXT_LINE_SPACING = 14;
+            R_TEXT_INIT_XPOS = 50;
+        }
     }
     msgCtx->textBoxProperties = font->charTexBuf[0];
     msgCtx->textBoxType = msgCtx->textBoxProperties >> 4;

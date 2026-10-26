@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/GameLanguage.h"
 #include "SohMenu.h"
 #include "soh/Notification/Notification.h"
 #include "soh/Enhancements/enhancementTypes.h"
@@ -101,19 +102,9 @@ const char* GetGameVersionString(uint32_t index) {
     }
 }
 
-#include "message_data_static.h"
-extern "C" MessageTableEntry* sNesMessageEntryTablePtr;
-extern "C" MessageTableEntry* sGerMessageEntryTablePtr;
-extern "C" MessageTableEntry* sFraMessageEntryTablePtr;
-extern "C" MessageTableEntry* sJpnMessageEntryTablePtr;
-
-static const std::array<MessageTableEntry**, LANGUAGE_MAX> messageTables = {
-    &sNesMessageEntryTablePtr, &sGerMessageEntryTablePtr, &sFraMessageEntryTablePtr, &sJpnMessageEntryTablePtr
-};
-
 void SohMenu::UpdateLanguageMap(std::map<int32_t, const char*>& languageMap) {
     for (int32_t i = LANGUAGE_ENG; i < LANGUAGE_MAX; i++) {
-        if (*messageTables.at(i) != NULL) {
+        if (GameLanguage_IsAvailable(i)) {
             if (!languageMap.contains(i)) {
                 languageMap.insert(std::make_pair(i, languages.at(i)));
             }
@@ -130,7 +121,7 @@ void SohMenu::AddMenuSettings() {
     WidgetPath path = { "Settings", "General", SECTION_COLUMN_1 };
 
     // General - Settings
-    AddWidget(path, "Menu Settings", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "Menu Settings", WIDGET_SEPARATOR_TEXT).Translation("ui.sections.menu_settings");
     AddWidget(path, "Menu Theme", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("Menu.Theme"))
         .RaceDisable(false)
@@ -163,7 +154,7 @@ void SohMenu::AddMenuSettings() {
         .Options(FloatSliderOptions().DefaultValue(0.85f).IsPercentage().Tooltip(
             "Sets the opacity of the background of the port menu."));
 
-    AddWidget(path, "General Settings", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "General Settings", WIDGET_SEPARATOR_TEXT).Translation("ui.sections.general_settings");
     AddWidget(path, "Cursor Always Visible", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("CursorVisibility"))
         .RaceDisable(false)
@@ -194,6 +185,7 @@ void SohMenu::AddMenuSettings() {
         .CVar("gSettings.ResetBtn")
         .Options(BtnSelectorOptions().DefaultValue(BTN_CUSTOM_MODIFIER2));
     AddWidget(path, "Open App Files Folder", WIDGET_BUTTON)
+        .Translation("ui.sections.open_app_files")
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
             std::string filesPath = Ship::Context::GetRawInstance()->GetAppDirectoryPath();
@@ -201,7 +193,7 @@ void SohMenu::AddMenuSettings() {
         })
         .Options(ButtonOptions().Tooltip("Opens the folder that contains the save and mods folders, etc."));
 
-    AddWidget(path, "Boot", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "Boot", WIDGET_SEPARATOR_TEXT).Translation("ui.sections.boot");
     AddWidget(path, "Boot Sequence", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("BootSequence"))
         .RaceDisable(false)
@@ -217,12 +209,13 @@ void SohMenu::AddMenuSettings() {
                               "Debug Warp Screen: Skip to the debug warp screen\n"
                               "Warp Point: Skip to active warp point (if set), see Dev Tools -> General"));
 
-    AddWidget(path, "Languages", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "Languages", WIDGET_SEPARATOR_TEXT).Translation("ui.sections.languages");
     AddWidget(path, "Translate Title Screen", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("TitleScreenTranslation"))
         .RaceDisable(false);
     AddWidget(path, "Language", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("Languages"))
+        .Callback([](WidgetInfo&) { GameLanguage_Set(CVarGetInteger(CVAR_SETTING("Languages"), LANGUAGE_ENG)); })
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) {
             auto options = std::static_pointer_cast<UIWidgets::ComboboxOptions>(info.options);
@@ -233,7 +226,7 @@ void SohMenu::AddMenuSettings() {
                      .ComponentAlignment(ComponentAlignments::Right)
                      .ComboMap(languages)
                      .DefaultIndex(LANGUAGE_ENG));
-    AddWidget(path, "Accessibility", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "Accessibility", WIDGET_SEPARATOR_TEXT).Translation("ui.sections.accessibility");
 #if defined(_WIN32) || defined(__APPLE__) || defined(ESPEAK)
     AddWidget(path, "Text to Speech", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SETTING("A11yTTS"))
@@ -256,7 +249,9 @@ void SohMenu::AddMenuSettings() {
         .CVar(CVAR_SETTING("A11yNoHeatHaze"))
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip("Disable the heat haze distortion effect in Death Mountain / Fire Temple."));
-    AddWidget(path, "EXPERIMENTAL", WIDGET_SEPARATOR_TEXT).Options(TextOptions().Color(Colors::Orange));
+    AddWidget(path, "EXPERIMENTAL", WIDGET_SEPARATOR_TEXT)
+        .Translation("ui.sections.experimental")
+        .Options(TextOptions().Color(Colors::Orange));
     AddWidget(path, "ImGui Menu Scaling", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_SETTING("ImGuiScale"))
         .RaceDisable(false)
