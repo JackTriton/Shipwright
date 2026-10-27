@@ -296,7 +296,8 @@ std::unordered_map<uint32_t, disabledInfo>& Menu::GetDisabledMap() {
 }
 
 void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
-    disabledTempTooltip = "This setting is disabled because: \n";
+    disabledTempTooltip =
+        Lang::UIString("ui.text.sohgui.menu.this_setting_is_disabled_because", "This setting is disabled because: \n");
     disabledValue = false;
     disabledTooltip = " ";
 
@@ -309,14 +310,16 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
         if (!widget.activeDisables.empty()) {
             widget.options->disabled = true;
             for (auto option : widget.activeDisables) {
-                disabledTempTooltip += std::string("\n- ") + disabledMap.at(option).reason;
+                disabledTempTooltip +=
+                    std::string("\n- ") + Lang::UIVariant("ui.disabled_reasons", disabledMap.at(option).reason);
             }
             widget.options->disabledTooltip = disabledTempTooltip.c_str();
         }
     }
     if (widget.raceDisable && raceDisableActive) {
         widget.options->disabled = true;
-        disabledTempTooltip += std::string("\n- Race Lockout Active");
+        disabledTempTooltip +=
+            std::string(Lang::UIString("ui.text.sohgui.menu.race_lockout_active", "\n- Race Lockout Active"));
         widget.options->disabledTooltip = disabledTempTooltip.c_str();
     }
 
@@ -324,8 +327,8 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
         ImGui::SameLine();
     }
 
-    const SohGui::LocalizedWidget localized(widget);
-    const WidgetInfo& display = localized.view;
+    SohGui::LocalizedWidget localized(widget);
+    WidgetInfo& display = localized.view;
     try {
         switch (widget.type) {
             case WIDGET_CHECKBOX: {
@@ -356,21 +359,29 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
                 auto currentAudioBackend = Ship::Context::GetRawInstance()->GetAudio()->GetCurrentAudioBackend();
                 UIWidgets::ComboboxOptions options = {};
                 options.color = menuThemeIndex;
-                options.tooltip = "Sets the audio API used by the game. Requires a relaunch to take effect.";
+                options.tooltip = Lang::UIString(
+                    "ui.text.sohgui.menu.sets_the_audio_api_used_by_the_game_requires_a_relaunch_to_take_effect",
+                    "Sets the audio API used by the game. Requires a relaunch to take effect.");
                 options.disabled = availableAudioBackends->size() <= 1;
-                options.disabledTooltip = "Only one audio API is available on this platform.";
-                if (UIWidgets::Combobox("Audio API", &currentAudioBackend, availableAudioBackendsMap, options)) {
+                options.disabledTooltip =
+                    Lang::UIString("ui.text.sohgui.menu.only_one_audio_api_is_available_on_this_platform",
+                                   "Only one audio API is available on this platform.");
+                if (UIWidgets::Combobox(display.name.c_str(), &currentAudioBackend, availableAudioBackendsMap,
+                                        UIWidgets::ComboboxOptions(options).TranslationScope("ui.text.sohgui.menu"))) {
                     Ship::Context::GetRawInstance()->GetAudio()->SetCurrentAudioBackend(currentAudioBackend);
                 }
             } break;
             case WIDGET_VIDEO_BACKEND: {
                 UIWidgets::ComboboxOptions options = {};
                 options.color = menuThemeIndex;
-                options.tooltip = "Sets the renderer API used by the game.";
+                options.tooltip = Lang::UIString("ui.text.sohgui.menu.sets_the_renderer_api_used_by_the_game",
+                                                 "Sets the renderer API used by the game.");
                 options.disabled = availableWindowBackends->size() <= 1;
-                options.disabledTooltip = "Only one renderer API is available on this platform.";
-                if (UIWidgets::Combobox("Renderer API (Needs reload)", &configWindowBackend, availableWindowBackendsMap,
-                                        options)) {
+                options.disabledTooltip =
+                    Lang::UIString("ui.text.sohgui.menu.only_one_renderer_api_is_available_on_this_platform",
+                                   "Only one renderer API is available on this platform.");
+                if (UIWidgets::Combobox(display.name.c_str(), &configWindowBackend, availableWindowBackendsMap,
+                                        UIWidgets::ComboboxOptions(options).TranslationScope("ui.text.sohgui.menu"))) {
                     Ship::Context::GetRawInstance()->GetConfig()->SetInt("Window.Backend.Id",
                                                                          (int32_t)(configWindowBackend));
                     Ship::Context::GetRawInstance()->GetConfig()->SetString("Window.Backend.Name",
@@ -412,7 +423,8 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
                 }
                 auto options = std::static_pointer_cast<UIWidgets::ComboboxOptions>(display.options);
                 options->color = menuThemeIndex;
-                if (UIWidgets::Combobox(display.name.c_str(), pointer, options->comboMap, *options)) {
+                if (UIWidgets::Combobox(display.name.c_str(), pointer, options->comboMap,
+                                        UIWidgets::ComboboxOptions(*options).TranslationScope("ui.text.sohgui.menu"))) {
                     if (widget.callback != nullptr) {
                         widget.callback(widget);
                     }
@@ -421,7 +433,9 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
             case WIDGET_CVAR_COMBOBOX: {
                 auto options = std::static_pointer_cast<UIWidgets::ComboboxOptions>(display.options);
                 options->color = menuThemeIndex;
-                if (UIWidgets::CVarCombobox(display.name.c_str(), widget.cVar, options->comboMap, *options)) {
+                if (UIWidgets::CVarCombobox(
+                        display.name.c_str(), widget.cVar, options->comboMap,
+                        UIWidgets::ComboboxOptions(*options).TranslationScope("ui.text.sohgui.menu"))) {
                     if (widget.callback != nullptr) {
                         widget.callback(widget);
                     }
@@ -496,7 +510,9 @@ void Menu::MenuDrawItem(WidgetInfo& widget, UIWidgets::Colors menuThemeIndex) {
             } break;
             case WIDGET_CUSTOM: {
                 if (widget.customFunction != nullptr) {
-                    widget.customFunction(widget);
+                    ImGui::PushID(widget.name.c_str());
+                    widget.customFunction(display);
+                    ImGui::PopID();
                 }
             } break;
             case WIDGET_WINDOW_BUTTON: {
@@ -637,7 +653,7 @@ void Menu::DrawElement() {
     ImGui::PushStyleColor(ImGuiCol_WindowBg,
                           ImVec4(0, 0, 0, CVarGetFloat(CVAR_SETTING("Menu.BackgroundOpacity"), 0.85f)));
 
-    if (!ImGui::Begin("Main Menu", NULL, windowFlags)) {
+    if (!ImGui::Begin(Lang::UILabel("ui.text.sohgui.menu.main_menu", "Main Menu"), NULL, windowFlags)) {
         if (!popout) {
             ImGui::PopStyleVar();
         }
@@ -791,7 +807,7 @@ void Menu::DrawElement() {
                 }
                 Ship::Context::GetRawInstance()->GetWindow()->Close();
             },
-            nullptr);
+            nullptr, "ui.text.sohgui.menu");
     }
     ImGui::PopStyleVar();
     ImGui::SameLine();

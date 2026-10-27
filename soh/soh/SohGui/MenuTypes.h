@@ -121,6 +121,12 @@ struct WidgetInfo {
     bool sameLine = false;
     bool raceDisable = true;
     bool hideInSearch = false;
+    // PreFunc formats a localized template with current values before rendering.
+    bool dynamicName = false;
+    WidgetInfo& DynamicName() {
+        dynamicName = true;
+        return *this;
+    }
 
     WidgetInfo& CVar(const char* cVar_) {
         cVar = cVar_;

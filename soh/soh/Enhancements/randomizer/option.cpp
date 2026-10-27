@@ -173,6 +173,28 @@ const std::string& Option::GetOptionText(size_t index) const {
     return GetCanonicalOptionText(index);
 }
 
+const std::string& Option::GetUIOptionText(size_t index) const {
+    const auto& fallback = GetCanonicalOptionText(index);
+    if (options.empty())
+        return fallback;
+    index = std::min(index, options.size() - 1);
+    std::string path;
+    if (GetCategory() == OptionCategory::Setting || GetCategory() == OptionCategory::Toggle)
+        path = settingPrefix + std::string(EnumToString(static_cast<RandomizerSettingKey>(key)).substr(4));
+    else if (GetCategory() == OptionCategory::Trick)
+        path = trickPrefix + std::string(EnumToString(static_cast<RandomizerTrick>(key)).substr(3));
+    else
+        return fallback;
+    for (auto& c : path)
+        if (c >= 'A' && c <= 'Z')
+            c += 'a' - 'A';
+    path += ".options." + std::to_string(index);
+    const auto translated = Lang::TryTranslate(path.c_str());
+    if (const auto* value = std::get_if<std::reference_wrapper<const std::string>>(&translated))
+        return value->get();
+    return fallback;
+}
+
 const std::string& Option::GetCanonicalOptionText(size_t index) const {
     if (options.empty()) {
         return empty;
@@ -332,7 +354,7 @@ void Option::AddWidget(WidgetPath& path) {
                               if (this->GetOptionIndex() > maxIndex) {
                                   CVarSetInteger(cvarName.c_str(), static_cast<int32_t>(maxIndex));
                               }
-                              sliderOpts->Format(this->GetOptionText(this->GetOptionIndex()).c_str());
+                              sliderOpts->Format(this->GetUIOptionText(this->GetOptionIndex()).c_str());
                           }
                       })
                       .CVar(cvarName.c_str())
@@ -472,7 +494,9 @@ void OptionGroup::AddWidgets(WidgetPath& path) const {
     }
     if (mContainerType == WidgetContainerType::SECTION || mContainerType == WidgetContainerType::COLUMN) {
         if (!mName.empty()) {
-            SohGui::mSohMenu->AddWidget(path, mName.c_str(), WIDGET_SEPARATOR_TEXT);
+            SohGui::mSohMenu->AddWidget(path, mName.c_str(), WIDGET_SEPARATOR_TEXT).PreFunc([this](WidgetInfo& info) {
+                info.name = Lang::UIVariant("ui.text.enhancements.randomizer.settings", mName.c_str());
+            });
         }
     }
     if (mContainsType == OptionGroupType::SUBGROUP) {

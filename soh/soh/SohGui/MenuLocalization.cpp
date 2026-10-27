@@ -50,14 +50,23 @@ void CopyOptions(WidgetInfo& target, const WidgetInfo& source) {
 }
 
 std::string WidgetLabel(const WidgetInfo& source) {
-    if (source.translationKey.empty() || source.options == nullptr)
+    if (source.translationKey.empty() || source.options == nullptr || source.dynamicName)
         return source.name;
     const auto label = source.name.substr(0, source.name.find("##"));
     const auto stableId = source.name.find("###");
     const auto suffix = stableId == std::string::npos
                             ? "###" + (source.cVar ? std::string(source.cVar) : source.translationKey)
                             : source.name.substr(stableId);
-    return Lang::TranslateOrFallback(source.translationKey + ".name", label) + suffix;
+    const auto fallback = Lang::UIString(source.translationKey.c_str(), label.c_str());
+    const bool formatted = source.type == WIDGET_SLIDER_INT || source.type == WIDGET_CVAR_SLIDER_INT ||
+                           source.type == WIDGET_SLIDER_FLOAT || source.type == WIDGET_CVAR_SLIDER_FLOAT;
+    std::string translated = formatted ? Lang::UIFormat((source.translationKey + ".name").c_str(), fallback)
+                                       : Lang::UIString((source.translationKey + ".name").c_str(), fallback);
+    // Plain text and custom renderers display the caption directly, rather than
+    // passing it through ImGui's label parser.
+    if (source.type == WIDGET_TEXT || source.type == WIDGET_SEPARATOR_TEXT || source.type == WIDGET_CUSTOM)
+        return translated;
+    return translated + suffix;
 }
 
 } // namespace
@@ -146,8 +155,15 @@ LocalizedWidget::LocalizedWidget(const WidgetInfo& source) : view(source) {
     CopyOptions(view, source);
     view.name = WidgetLabel(source);
     view.options->tooltip = Lang::TranslateOrFallback(source.translationKey + ".description", source.options->tooltip);
-    view.options->disabledTooltip =
-        Lang::TranslateOrFallback(source.translationKey + ".disabled", source.options->disabledTooltip);
+    view.options->disabledTooltip = Lang::UIVariant((source.translationKey + ".disabled_messages").c_str(),
+                                                    source.options->disabledTooltip.c_str());
+    if (source.type == WIDGET_SLIDER_INT || source.type == WIDGET_CVAR_SLIDER_INT) {
+        auto options = std::static_pointer_cast<UIWidgets::IntSliderOptions>(view.options);
+        options->format = Lang::UIFormatVariant(source.translationKey, options->format);
+    } else if (source.type == WIDGET_SLIDER_FLOAT || source.type == WIDGET_CVAR_SLIDER_FLOAT) {
+        auto options = std::static_pointer_cast<UIWidgets::FloatSliderOptions>(view.options);
+        options->format = Lang::UIFormatVariant(source.translationKey, options->format);
+    }
     if (source.type == WIDGET_COMBOBOX || source.type == WIDGET_CVAR_COMBOBOX) {
         const auto original = std::static_pointer_cast<UIWidgets::ComboboxOptions>(source.options);
         const auto translated = std::static_pointer_cast<UIWidgets::ComboboxOptions>(view.options);

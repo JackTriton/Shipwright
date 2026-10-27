@@ -34,6 +34,9 @@ class TranslationCatalog {
     std::string ResolveLanguage(const std::string& selection, const std::string& legacySelection = "") const;
 
     const std::string* FindExact(std::string_view language, std::string_view path) const;
+    // Bind canonical built-in display-table values within one explicit scope.
+    // Callers cache the result by catalog revision; never use this for user data.
+    std::string FindEnglishKey(std::string_view prefix, std::string_view text) const;
 
     // Order: selected path, selected fallbackPath, English path, English fallbackPath.
     // Empty strings are intentional translations; only missing keys fall back.

@@ -43,6 +43,7 @@ void RegisterUILanguageMenu() {
     SohGui::mSohMenu->AddSidebarEntry("Settings", "UI Language", 1);
     WidgetPath path = { "Settings", "UI Language", SECTION_COLUMN_1 };
     SohGui::mSohMenu->AddWidget(path, "UI Language", WIDGET_CUSTOM)
+        .Translation("ui.panels.uilanguagemenu.ui_language")
         .CustomFunction(DrawUILanguage)
         .RaceDisable(false)
         .HideInSearch(true);

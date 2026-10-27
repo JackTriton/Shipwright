@@ -1,3 +1,4 @@
+#include "soh/Enhancements/Lang/Lang.h"
 #include "UIWidgets.hpp"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -1091,7 +1092,7 @@ void DrawFlagArray32(const std::string& name, uint32_t& flags, Colors color) {
         // Show tooltip with bit number
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            ImGui::Text("%s Bit %d", name.c_str(), flagIndex);
+            ImGui::Text(Lang::UIFormat("ui.text.sohgui.uiwidgets.s_bit_d", "%s Bit %d"), name.c_str(), flagIndex);
             ImGui::EndTooltip();
         }
         ImGui::PopID();
@@ -1123,7 +1124,7 @@ void DrawFlagArray16(const std::string& name, uint16_t& flags, Colors color) {
         // Show tooltip with bit number
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            ImGui::Text("%s Bit %d", name.c_str(), flagIndex);
+            ImGui::Text(Lang::UIFormat("ui.text.sohgui.uiwidgets.s_bit_d", "%s Bit %d"), name.c_str(), flagIndex);
             ImGui::EndTooltip();
         }
         ImGui::PopID();
@@ -1155,7 +1156,7 @@ void DrawFlagArray8(const std::string& name, uint8_t& flags, Colors color) {
         // Show tooltip with bit number
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            ImGui::Text("%s Bit %d", name.c_str(), flagIndex);
+            ImGui::Text(Lang::UIFormat("ui.text.sohgui.uiwidgets.s_bit_d", "%s Bit %d"), name.c_str(), flagIndex);
             ImGui::EndTooltip();
         }
         ImGui::PopID();
@@ -1187,7 +1188,7 @@ void DrawFlagArray8Mask(const std::string& name, uint8_t& flags, Colors color) {
         // Show tooltip with bit number
         if (ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
-            ImGui::Text("%s Bit %d", name.c_str(), flagIndex);
+            ImGui::Text(Lang::UIFormat("ui.text.sohgui.uiwidgets.s_bit_d", "%s Bit %d"), name.c_str(), flagIndex);
             ImGui::EndTooltip();
         }
         ImGui::PopID();
@@ -1233,10 +1234,13 @@ bool BtnSelector(const char* label, int32_t* value, const BtnSelectorOptions& op
                 ImGui::Text("+");
                 ImGui::SameLine();
             }
-            if (UIWidgets::Button(buttonName.c_str(), UIWidgets::ButtonOptions()
-                                                          .Tooltip("Remove this button from the combination")
-                                                          .Color(UIWidgets::Colors::Gray)
-                                                          .Size(UIWidgets::Sizes::Inline))) {
+            if (UIWidgets::Button(
+                    buttonName.c_str(),
+                    UIWidgets::ButtonOptions()
+                        .Tooltip(Lang::UIString("ui.text.sohgui.uiwidgets.remove_this_button_from_the_combination",
+                                                "Remove this button from the combination"))
+                        .Color(UIWidgets::Colors::Gray)
+                        .Size(UIWidgets::Sizes::Inline))) {
                 currentValue &= ~buttonMask;
                 dirty = true;
             }

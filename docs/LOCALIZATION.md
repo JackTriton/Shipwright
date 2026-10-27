@@ -24,9 +24,10 @@ separate from a catalog's locale identifier.
   pages keep native placement regardless of the alignment rule. Existing ROM
   messages are unaffected.
 - Added Japanese messages use the existing game font for Japanese characters
-  and native Latin glyphs for ASCII. Their width and line wrapping use the
-  actual glyph advances. The committed `JapaneseMessageFontTable.inc` maps
-  Unicode to the native glyph IDs in `soh/assets/textures/kanji/kanji.h`;
+  and native Latin glyphs for ASCII. Latin glyphs keep their aspect ratio and
+  use the Japanese capital-height reference. Width, wrapping and alignment
+  account for that scale; lowercase letters keep their natural relative size.
+  The committed `JapaneseMessageFontTable.inc` maps Unicode to the native glyph IDs in `soh/assets/textures/kanji/kanji.h`;
   it contains no font images. An unavailable glyph uses the native fallback.
 - French and German UI catalogs follow the English key order. Prefer the
   supplied European OoT text for established item, character, and location
@@ -41,6 +42,29 @@ Translation and formatting happen when a message is built or decoded; glyph
 layout is not recomputed each frame. More languages can use catalog locale
 IDs, but rendering profiles and fonts for other writing systems require
 separate implementation.
+
+## UI rendering
+
+Registered widgets with a CVar use its catalog path. Headings, descriptions,
+actions and custom widgets need an explicit `.Translation(...)` key. Custom
+drawing receives the localized widget view; callbacks and storage keep the
+canonical widget and numeric option values.
+
+For direct drawing, use `Lang::UIString` for plain text, `Lang::UILabel` for
+interactive ImGui labels, and `Lang::UIFormat` or `Lang::UIBraceFormat` for
+formatted templates. Label helpers retain canonical `###` IDs. A dynamic
+built-in table may declare a source scope with `TranslationScope(...)` or
+`Lang::UIVariant`; exact English key resolution is cached within that scope.
+Do not translate CVar names, seed/configuration strings, resource paths or
+user-defined names. The display helpers run on the UI thread and retain their
+storage until the selected locale or catalog revision changes.
+
+`SohGui::LocalizedWindow` adapts captions for ordinary application windows.
+Windows that implement their own `Draw()` use `LocalizedWindowTitle` at their
+`ImGui::Begin` call. Existing saved window placement and docking settings are
+migrated to the stable canonical ID. Four trackers share `TrackerLocalization`
+for item, area, entrance and check names; unknown entries keep their supplied
+fallback rather than displaying an error.
 
 ## Building and checking
 

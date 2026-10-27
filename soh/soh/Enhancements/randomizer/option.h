@@ -191,6 +191,8 @@ class Option {
      * @return const std::string&
      */
     const std::string& GetOptionText(size_t index) const;
+    // Display only: option parsing, seeds and saves retain canonical text/indices.
+    const std::string& GetUIOptionText(size_t index) const;
     const std::string& GetCanonicalOptionText(size_t index) const;
 
     /**

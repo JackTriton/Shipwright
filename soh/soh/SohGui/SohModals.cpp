@@ -35,10 +35,14 @@ void SohModalWindow::DrawElement() {
         SohModal curModal = modals.at(0);
         if (!curModal.translationKey_.empty()) {
             const auto& key = curModal.translationKey_;
-            curModal.title_ = Lang::TranslateOrFallback(key + ".title", curModal.title_) + "###" + modals.at(0).title_;
-            curModal.message_ = Lang::TranslateOrFallback(key + ".message", curModal.message_);
-            curModal.button1_ = Lang::TranslateOrFallback(key + ".button1", curModal.button1_);
-            curModal.button2_ = Lang::TranslateOrFallback(key + ".button2", curModal.button2_);
+            curModal.title_ = Lang::TranslateOrFallback(key + ".title", Lang::UIVariant(key, curModal.title_.c_str())) +
+                              "###" + modals.at(0).title_;
+            curModal.message_ =
+                Lang::TranslateOrFallback(key + ".message", Lang::UIVariant(key, curModal.message_.c_str()));
+            curModal.button1_ =
+                Lang::TranslateOrFallback(key + ".button1", Lang::UIVariant(key, curModal.button1_.c_str()));
+            curModal.button2_ =
+                Lang::TranslateOrFallback(key + ".button2", Lang::UIVariant(key, curModal.button2_.c_str()));
         }
         if (!ImGui::IsPopupOpen(curModal.title_.c_str())) {
             ImGui::OpenPopup(curModal.title_.c_str());

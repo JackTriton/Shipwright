@@ -130,3 +130,16 @@ const std::string* TranslationCatalog::Find(std::string_view language, std::stri
 }
 
 } // namespace Lang
+
+std::string Lang::TranslationCatalog::FindEnglishKey(std::string_view prefix, std::string_view text) const {
+    const auto language = languages.find(fallbackLanguage);
+    if (language == languages.end())
+        return {};
+    const std::string start = std::string(prefix) + ".";
+    for (auto entry = language->second.lower_bound(start);
+         entry != language->second.end() && entry->first.starts_with(start); ++entry) {
+        if (entry->second == text)
+            return entry->first;
+    }
+    return {};
+}
