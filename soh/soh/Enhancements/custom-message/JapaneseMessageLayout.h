@@ -9,6 +9,10 @@
 namespace JapaneseMessageLayout {
 constexpr int LinesPerPage = 3;
 constexpr float FontScale = 0.88f;
+// Native Latin capitals occupy 12 rows; Japanese capitals occupy 14 rows
+// inside the same 16x16 cell. Use one font-wide ratio so lowercase letters,
+// punctuation and descenders keep their original proportions.
+constexpr float LatinGlyphScale = 14.0f / 12.0f;
 constexpr int LineWidth(bool icon) {
     return (icon ? 16 * 14 : 16 * 16) * 88 / 100;
 }
@@ -56,7 +60,7 @@ constexpr int Advance(uint32_t scalar, float scale = FontScale) {
     // Ordinary ASCII uses the native Latin font, not a full-width alias.
     // Keep the integer rounding identical to the game's draw loop.
     if (IsAscii(scalar))
-        return static_cast<int>(AsciiWidths[scalar - ' '] * scale);
+        return static_cast<int>(AsciiWidths[scalar - ' '] * scale * LatinGlyphScale);
     int advance;
     switch (Canonical(scalar)) {
         case U'　':
@@ -88,6 +92,10 @@ constexpr int Advance(uint32_t scalar, float scale = FontScale) {
     }
     return DrawOffset(scalar) + advance;
 }
+
+// W is the widest native Latin name character. Reserve enough room for either
+// an enlarged Latin letter or a Japanese cell before the save name is decoded.
+constexpr int MaxNameGlyphAdvance = Advance('W') > Advance(U'Ｗ') ? Advance('W') : Advance(U'Ｗ');
 
 inline bool CannotStartLine(uint32_t scalar) {
     constexpr std::u32string_view punctuation =

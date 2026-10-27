@@ -19,6 +19,7 @@ extern "C" {
 namespace {
 std::array<float, 200> advances{};
 std::array<uint32_t, 200> japaneseScalars{};
+std::array<bool, 200> latinGlyphs{};
 constexpr int16_t Unaligned = std::numeric_limits<int16_t>::min();
 std::array<int16_t, 200> lineStarts;
 std::array<int16_t, 3> choiceShifts;
@@ -33,6 +34,7 @@ void ResetAlignment() {
 void GameMessage_BeginPage(void) {
     advances.fill(0);
     japaneseScalars.fill(0);
+    latinGlyphs.fill(false);
     ResetAlignment();
 }
 
@@ -73,20 +75,43 @@ int16_t GameMessage_GetDrawOffset(uint16_t decodedIndex) {
                ? JapaneseMessageLayout::DrawOffset(japaneseScalars[decodedIndex])
                : 0;
 }
+float GameMessage_GetDrawScale(uint16_t decodedIndex) {
+    return MessageLanguage_UsesUnicode() && MessageLanguage_UsesJapaneseLayout() &&
+                   decodedIndex < latinGlyphs.size() && latinGlyphs[decodedIndex]
+               ? JapaneseMessageLayout::LatinGlyphScale
+               : 1.0f;
+}
 float GameMessage_GetScaledAdvance(uint16_t decodedIndex, float legacyAdvance, float scale) {
     return decodedIndex < japaneseScalars.size() && japaneseScalars[decodedIndex]
                ? JapaneseMessageLayout::Advance(japaneseScalars[decodedIndex], scale)
-               : GameMessage_GetAdvance(decodedIndex, legacyAdvance) * scale;
+               : GameMessage_GetAdvance(decodedIndex, legacyAdvance) * scale * GameMessage_GetDrawScale(decodedIndex);
 }
 
 void GameMessage_AlignPage(const uint8_t* decoded, size_t length, const float* legacyWidths, size_t legacyWidthCount,
                            float scale, int16_t spaceAdvance, int16_t baseX) {
     ResetAlignment();
+    latinGlyphs.fill(false);
     // The native Japanese ROM decoder never enters this path, even when the
     // selected game language is Japanese. English fallback pages also opt out.
     if (!MessageLanguage_UsesUnicode() || !MessageLanguage_UsesJapaneseLayout() || decoded == nullptr ||
         legacyWidths == nullptr || length == 0 || length > lineStarts.size())
         return;
+    // Inspect the final decoded bytes so player names and numeric variables
+    // receive the same scale as authored Latin text. Never classify control operands
+    // or the '?' placeholder used for a full-width Unicode glyph as Latin.
+    for (size_t index = 0; index < length;) {
+        const auto code = decoded[index];
+        const auto size = code < 0x20 && code != MESSAGE_BACKGROUND ? UnicodeMessage::ControlSize(code) : 1;
+        if (size > length - index)
+            break;
+        if (code == MESSAGE_END || code == MESSAGE_BOX_BREAK || code == MESSAGE_BOX_BREAK_DELAYED ||
+            code == MESSAGE_TEXTID || code == MESSAGE_EVENT)
+            break;
+        // The native Latin font also contains legacy accent bytes 0x80-0x9E.
+        // Controller symbols start at 0x9F and retain their native geometry.
+        latinGlyphs[index] = !japaneseScalars[index] && code > ' ' && code < 0x9F;
+        index += size;
+    }
     const auto alignment = MessageLanguage_GetAlignment();
     if (alignment == MESSAGE_ALIGNMENT_LEFT)
         return; // Preserve native margins, choice indentation and authored SHIFT.

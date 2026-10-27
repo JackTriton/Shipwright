@@ -231,16 +231,17 @@ void Message_HandleChoiceSelection(PlayState* play, u8 numChoices) {
         (numChoices == 1) ? R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex + 1) : R_TEXT_CHOICE_YPOS(msgCtx->choiceIndex);
 }
 
-void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
+static void Message_DrawTextCharScaled(PlayState* play, void* textureImage, Gfx** p, f32 glyphScale) {
     MessageContext* msgCtx = &play->msgCtx;
     Gfx* gfx = *p;
     s16 x = msgCtx->textPosX;
     s16 y = msgCtx->textPosY;
+    f32 scale = (R_TEXT_CHAR_SCALE / 100.0f) * glyphScale;
 
     gDPPipeSync(gfx++);
 
-    sCharTexSize = (R_TEXT_CHAR_SCALE / 100.0f) * 16.0f;
-    sCharTexScale = 1024.0f / (R_TEXT_CHAR_SCALE / 100.0f);
+    sCharTexSize = scale * 16.0f;
+    sCharTexScale = 1024.0f / scale;
 
     gDPLoadTextureBlock_4b(gfx++, textureImage, G_IM_FMT_I, FONT_CHAR_TEX_WIDTH, FONT_CHAR_TEX_HEIGHT, 0,
                            G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMIRROR | G_TX_CLAMP, G_TX_NOMASK, G_TX_NOMASK, G_TX_NOLOD,
@@ -260,6 +261,10 @@ void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
     gSPTextureRectangle(gfx++, x << 2, y << 2, (x + sCharTexSize) << 2, (y + sCharTexSize) << 2, G_TX_RENDERTILE, 0, 0,
                         sCharTexScale, sCharTexScale);
     *p = gfx;
+}
+
+void Message_DrawTextChar(PlayState* play, void* textureImage, Gfx** p) {
+    Message_DrawTextCharScaled(play, textureImage, p, 1.0f);
 }
 
 // resizes textboxes when opening them
@@ -1501,7 +1506,7 @@ void Message_DrawText(PlayState* play, Gfx** gfxP) {
                                          &gSfxDefaultFreqAndVolScale, &gSfxDefaultReverb);
                 }
                 msgCtx->textPosX += GameMessage_GetDrawOffset(i);
-                Message_DrawTextChar(play, &font->charTexBuf[charTexIdx], &gfx);
+                Message_DrawTextCharScaled(play, &font->charTexBuf[charTexIdx], &gfx, GameMessage_GetDrawScale(i));
                 msgCtx->textPosX -= GameMessage_GetDrawOffset(i);
                 charTexIdx += FONT_CHAR_TEX_SIZE;
 

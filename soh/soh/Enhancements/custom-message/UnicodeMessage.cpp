@@ -44,7 +44,7 @@ int VariableWidth(unsigned int code, bool japaneseFont) {
         return code == 0x0F ? 96 : 0;
     switch (code) {
         case 0x0F:
-            return 8 * 14; // Longest player name.
+            return 8 * JapaneseMessageLayout::MaxNameGlyphAdvance; // Longest player name.
         case 0x16:
         case 0x17:
         case 0x1F:
