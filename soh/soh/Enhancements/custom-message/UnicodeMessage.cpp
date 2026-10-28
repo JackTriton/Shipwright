@@ -61,7 +61,7 @@ int VariableWidth(unsigned int code, bool japaneseFont) {
 std::vector<Token> Tokens(const std::string& text, bool japaneseFont = false) {
     std::vector<Token> tokens;
     for (std::size_t cursor = 0; cursor < text.size();) {
-        const unsigned char byte = text[cursor];
+        const auto byte = static_cast<unsigned char>(text[cursor]);
         if (byte < 0x20) {
             const auto size = ControlSize(byte);
             if (cursor + size > text.size())
@@ -159,7 +159,7 @@ std::string Format(const std::string& text, bool japaneseFont, std::optional<uin
         result += color;
         line = 1;
         width = 0;
-        pageUnits = japaneseFont || itemIcon ? icon.size() + color.size() : 0;
+        pageUnits = japaneseFont || itemIcon ? static_cast<int>(icon.size() + color.size()) : 0;
     };
     const auto newline = [&](int upcomingUnits = 0) {
         if (line == maxLines || pageUnits + 1 + upcomingUnits > 100)
@@ -185,7 +185,7 @@ std::string Format(const std::string& text, bool japaneseFont, std::optional<uin
             result += icon;
             line = 1;
             width = 0;
-            pageUnits = icon.size();
+            pageUnits = static_cast<int>(icon.size());
         } else if (token.code == 0x01) {
             newline();
         } else {

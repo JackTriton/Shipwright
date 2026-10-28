@@ -385,8 +385,9 @@ void CustomMessage::LoadIntoFont(const std::string& locale) {
     } else {
         MessageLanguage_Set(language);
     }
-    msgCtx->msgLength = font->msgLength =
-        static_cast<u32>(SohUtils::CopyStringToCharBuffer(buffer, text, maxBufferSize));
+    const size_t length = SohUtils::CopyStringToCharBuffer(buffer, text, maxBufferSize);
+    font->msgLength = static_cast<u32>(length);
+    msgCtx->msgLength = static_cast<s32>(length);
 }
 
 void CustomMessage::Replace(std::string&& oldStr, std::string&& newStr) {
@@ -555,10 +556,10 @@ static size_t NextLineLength(const std::string* textStr, const size_t lastNewlin
             // Some characters only one byte while others are two bytes
             // So check both possibilities when checking for a character
             if (pixelWidthTable.count(textStr->substr(currentPos, 1))) {
-                totalPixelWidth += pixelWidthTable[textStr->substr(currentPos, 1)];
+                totalPixelWidth += static_cast<size_t>(pixelWidthTable[textStr->substr(currentPos, 1)]);
                 nextPosJump = 1;
             } else if (pixelWidthTable.count(textStr->substr(currentPos, 2))) {
-                totalPixelWidth += pixelWidthTable[textStr->substr(currentPos, 2)];
+                totalPixelWidth += static_cast<size_t>(pixelWidthTable[textStr->substr(currentPos, 2)]);
                 nextPosJump = 2;
             } else {
                 SPDLOG_DEBUG("Table does not contain " + textStr->substr(currentPos, 1) + "/" +

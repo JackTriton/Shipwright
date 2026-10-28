@@ -45,14 +45,14 @@ const UIFontGlyphs::Glyph& UIFontGlyphs::Get(unsigned int codepoint) {
             unsigned char* atlas;
             int atlasWidth, atlasHeight;
             font->ContainerAtlas->GetTexDataAsAlpha8(&atlas, &atlasWidth, &atlasHeight);
-            const int left = std::lround(glyph->U0 * atlasWidth);
-            const int top = std::lround(glyph->V0 * atlasHeight);
-            const int sourceWidth = std::lround(glyph->U1 * atlasWidth) - left;
-            const int sourceHeight = std::lround(glyph->V1 * atlasHeight) - top;
-            const int width = std::ceil(glyph->X1 - glyph->X0);
-            result.height = std::ceil(glyph->Y1 - glyph->Y0);
+            const int left = static_cast<int>(std::lround(glyph->U0 * static_cast<float>(atlasWidth)));
+            const int top = static_cast<int>(std::lround(glyph->V0 * static_cast<float>(atlasHeight)));
+            const int sourceWidth = static_cast<int>(std::lround(glyph->U1 * static_cast<float>(atlasWidth))) - left;
+            const int sourceHeight = static_cast<int>(std::lround(glyph->V1 * static_cast<float>(atlasHeight))) - top;
+            const int width = static_cast<int>(std::ceil(glyph->X1 - glyph->X0));
+            result.height = static_cast<int>(std::ceil(glyph->Y1 - glyph->Y0));
             result.width = (width + 7) & ~7;
-            result.pixels.resize(result.width * result.height, 0);
+            result.pixels.resize(static_cast<size_t>(result.width) * static_cast<size_t>(result.height), 0);
             // Atlas UVs include ImGui's horizontal/vertical oversampling. They
             // are not logical glyph dimensions: treating them as such stretches
             // the text and makes neighboring glyphs overlap (OversampleH is 3).
@@ -66,7 +66,10 @@ const UIFontGlyphs::Glyph& UIFontGlyphs::Get(unsigned int codepoint) {
                     for (int y = y0; y < y1; ++y)
                         for (int x = x0; x < x1; ++x)
                             sum += atlas[(top + y) * atlasWidth + left + x];
-                    result.pixels[row * result.width + column] = sum / ((x1 - x0) * (y1 - y0));
+                    const size_t pixelIndex = static_cast<size_t>(row) * static_cast<size_t>(result.width) +
+                                              static_cast<size_t>(column);
+                    const auto samples = static_cast<unsigned int>((x1 - x0) * (y1 - y0));
+                    result.pixels[pixelIndex] = static_cast<unsigned char>(sum / samples);
                 }
         }
     }
@@ -92,19 +95,25 @@ const UIFontGlyphs::Cell& UIFontGlyphs::GetCell(unsigned int codepoint) {
     // quantizing alpha to the exact I4 format used by the original renderer.
     for (int y = 0; y < 16; ++y) {
         for (int x = 0; x < 16; ++x) {
-            const float sx = (x + 0.5f) / scale - glyph.x - 0.5f;
-            const float sy = (y + 0.5f) / scale - (glyph.y - topOffset) - 0.5f;
-            const int left = std::floor(sx), top = std::floor(sy);
+            const float sx = (static_cast<float>(x) + 0.5f) / scale - glyph.x - 0.5f;
+            const float sy = (static_cast<float>(y) + 0.5f) / scale - (glyph.y - topOffset) - 0.5f;
+            const int left = static_cast<int>(std::floor(sx)), top = static_cast<int>(std::floor(sy));
+            const float fractionX = sx - static_cast<float>(left);
+            const float fractionY = sy - static_cast<float>(top);
             float alpha = 0;
             for (int dy = 0; dy < 2; ++dy)
                 for (int dx = 0; dx < 2; ++dx) {
                     const int px = left + dx, py = top + dy;
-                    if (px >= 0 && px < glyph.width && py >= 0 && py < glyph.height)
-                        alpha += glyph.pixels[py * glyph.width + px] * (dx ? sx - left : 1 - (sx - left)) *
-                                 (dy ? sy - top : 1 - (sy - top));
+                    if (px >= 0 && px < glyph.width && py >= 0 && py < glyph.height) {
+                        const size_t pixelIndex = static_cast<size_t>(py) * static_cast<size_t>(glyph.width) +
+                                                  static_cast<size_t>(px);
+                        alpha += glyph.pixels[pixelIndex] * (dx ? fractionX : 1.0f - fractionX) *
+                                 (dy ? fractionY : 1.0f - fractionY);
+                    }
                 }
-            const unsigned int nibble = std::clamp(static_cast<int>(std::lround(alpha / 17)), 0, 15);
-            result.pixels[(y * 16 + x) / 2] |= nibble << ((x % 2 == 0) ? 4 : 0);
+            const auto nibble = static_cast<unsigned int>(std::clamp(static_cast<int>(std::lround(alpha / 17)), 0, 15));
+            result.pixels[static_cast<size_t>((y * 16 + x) / 2)] |=
+                static_cast<unsigned char>(nibble << ((x % 2 == 0) ? 4 : 0));
         }
     }
     return cells.emplace(codepoint, std::move(result)).first->second;

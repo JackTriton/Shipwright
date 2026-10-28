@@ -41,7 +41,7 @@ void GameMessage_BeginPage(void) {
 size_t GameMessage_DecodeGlyph(const char* input, size_t length, uint8_t* texture, uint16_t decodedIndex) {
     if (!length || decodedIndex >= advances.size())
         return 0;
-    const unsigned char first = input[0];
+    const auto first = static_cast<unsigned char>(input[0]);
     if (JapaneseMessageLayout::IsAscii(first) || (first >= 0x80 && first <= 0xAB))
         return 0; // Native Latin/button glyph: the caller uses Font_LoadChar.
     uint32_t scalar;
@@ -72,7 +72,7 @@ float GameMessage_GetAdvance(uint16_t decodedIndex, float legacyAdvance) {
 }
 int16_t GameMessage_GetDrawOffset(uint16_t decodedIndex) {
     return decodedIndex < japaneseScalars.size() && japaneseScalars[decodedIndex]
-               ? JapaneseMessageLayout::DrawOffset(japaneseScalars[decodedIndex])
+               ? static_cast<int16_t>(JapaneseMessageLayout::DrawOffset(japaneseScalars[decodedIndex]))
                : 0;
 }
 float GameMessage_GetDrawScale(uint16_t decodedIndex) {
@@ -83,7 +83,7 @@ float GameMessage_GetDrawScale(uint16_t decodedIndex) {
 }
 float GameMessage_GetScaledAdvance(uint16_t decodedIndex, float legacyAdvance, float scale) {
     return decodedIndex < japaneseScalars.size() && japaneseScalars[decodedIndex]
-               ? JapaneseMessageLayout::Advance(japaneseScalars[decodedIndex], scale)
+               ? static_cast<float>(JapaneseMessageLayout::Advance(japaneseScalars[decodedIndex], scale))
                : GameMessage_GetAdvance(decodedIndex, legacyAdvance) * scale * GameMessage_GetDrawScale(decodedIndex);
 }
 
@@ -123,12 +123,13 @@ void GameMessage_AlignPage(const uint8_t* decoded, size_t length, const float* l
     const auto finishLine = [&] {
         const int width = right - left;
         const int remaining = std::max(0, JapaneseMessageLayout::LineWidth(false) - width);
-        const int16_t start = baseX + (alignment == MESSAGE_ALIGNMENT_RIGHT ? remaining : remaining / 2) - left;
+        const auto start = static_cast<int16_t>(
+            baseX + (alignment == MESSAGE_ALIGNMENT_RIGHT ? remaining : remaining / 2) - left);
         lineStarts[lineStart] = start;
         if (choice >= 0 && choice < static_cast<int>(choiceShifts.size())) {
             // Preserve the native distance between the cursor and the option's
             // indented origin. Each option follows its own aligned line.
-            choiceShifts[choice++] = start + left - (baseX + 32);
+            choiceShifts[static_cast<size_t>(choice++)] = static_cast<int16_t>(start + left - (baseX + 32));
         }
     };
     for (size_t index = 0; index < length;) {
@@ -170,7 +171,7 @@ void GameMessage_AlignPage(const uint8_t* decoded, size_t length, const float* l
             const size_t legacyIndex = code - ' ';
             const float legacy = legacyIndex < legacyWidthCount ? legacyWidths[legacyIndex] : 16;
             pen += code == MESSAGE_NAME ? static_cast<int>(16 * scale)
-                                        : static_cast<int>(GameMessage_GetScaledAdvance(index, legacy, scale));
+                                        : static_cast<int>(GameMessage_GetScaledAdvance(static_cast<uint16_t>(index), legacy, scale));
             right = pen;
         }
         index += size;
@@ -190,6 +191,6 @@ int16_t GameMessage_GetLineStart(uint16_t decodedIndex, int16_t legacyX) {
 int16_t GameMessage_GetChoiceX(uint8_t choiceIndex, int16_t legacyX) {
     return aligned && MessageLanguage_UsesUnicode() && MessageLanguage_UsesJapaneseLayout() &&
                    choiceIndex < choiceShifts.size() && choiceShifts[choiceIndex] != Unaligned
-               ? legacyX + choiceShifts[choiceIndex]
+               ? static_cast<int16_t>(legacyX + choiceShifts[choiceIndex])
                : legacyX;
 }

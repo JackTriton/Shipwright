@@ -172,7 +172,8 @@ void LoadCustomItemIcon(bool /* legacy English-fallback hook argument */) {
         static int16_t sIconItem32XOffsets[] = { 74, 74, 74, 54 };
         static int16_t sIconItem24XOffsets[] = { 72, 72, 72, 50 };
         MessageContext* msgCtx = &gPlayState->msgCtx;
-        uint8_t language = MessageLanguage_UsesUnicode() ? LANGUAGE_JPN : MessageLanguage_Get();
+        const uint8_t language =
+            MessageLanguage_UsesUnicode() ? static_cast<uint8_t>(LANGUAGE_JPN) : MessageLanguage_Get();
         if (iconSize == ICON_SIZE_32) {
             R_TEXTBOX_ICON_XPOS = R_TEXT_INIT_XPOS - sIconItem32XOffsets[language];
             R_TEXTBOX_ICON_YPOS = (R_TEXTBOX_Y + 10) + 6;
@@ -272,7 +273,7 @@ void BuildMapMessage(uint16_t* textId, bool* loadFromMessageTable) {
         (ctx->GetOption(RSK_MQ_DUNGEON_RANDOM).Is(RO_MQ_DUNGEONS_SET_NUMBER) &&
          ctx->GetOption(RSK_MQ_DUNGEON_COUNT).Is(MAX_MQ_DUNGEON_COUNT))) {
         msg.Replace("[[typeHint]]", "");
-    } else if (ResourceMgr_IsSceneMasterQuest(sceneNum)) {
+    } else if (ResourceMgr_IsSceneMasterQuest(static_cast<int16_t>(sceneNum))) {
         msg.Replace("[[typeHint]]", Rando::StaticData::hintTextTable[RHT_DUNGEON_MASTERFUL].GetHintMessage());
     } else {
         msg.Replace("[[typeHint]]", Rando::StaticData::hintTextTable[RHT_DUNGEON_ORDINARY].GetHintMessage());

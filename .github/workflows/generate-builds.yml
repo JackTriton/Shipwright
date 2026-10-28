@@ -242,9 +242,10 @@ jobs:
         VCPKG_ROOT: ${{github.workspace}}/vcpkg
       run: |
         $env:PATH = "$env:USERPROFILE/.cargo/bin;$env:PATH"
-        cmake -S . -B build-windows -G Ninja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DBUILD_REMOTE_CONTROL=1 "-DSOH_PREBUILT_PORT_ARCHIVE=${{ github.workspace }}/prebuilt/soh.o2r"
+        cmake -S . -B build-windows -G Ninja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DBUILD_REMOTE_CONTROL=1 "-DVCPKG_ROOT=${{ github.workspace }}/vcpkg" "-DSOH_PREBUILT_PORT_ARCHIVE=${{ github.workspace }}/prebuilt/soh.o2r"
     - name: Build SoH
-      run: cmake --build build-windows --config Release --parallel 10
+      # Compile independent files after an error so one CI run reports all failures.
+      run: cmake --build build-windows --config Release --parallel 10 -- -k 0
     - name: Package SoH
       working-directory: build-windows
       run: cpack

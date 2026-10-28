@@ -69,7 +69,7 @@ void SohFileSelect_DrawSettingText(GraphicsContext* gfx, u8 optionIndex, s16 x, 
             continue;
         }
         const auto& cell = glyphs.GetCell(scalar);
-        Interface_DrawTextCharacter(gfx, std::lround(penX), std::lround(penY),
+        Interface_DrawTextCharacter(gfx, static_cast<s16>(std::lround(penX)), static_cast<s16>(std::lround(penY)),
                                     const_cast<unsigned char*>(cell.pixels.data()), red, green, blue, alpha,
                                     nativeScale, shadow);
         penX += cell.advance * (R_TEXT_CHAR_SCALE / 100.0f) * nativeScale;
