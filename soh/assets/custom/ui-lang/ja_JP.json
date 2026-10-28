@@ -17743,6 +17743,7 @@
                 "permissions_error_message": "SoHに必要なファイルアクセス権がありません。\n必要なアクセス権のあるフォルダーへ移動し、もう一度起動してください。",
                 "temporary_directory_message": "SoHが一時フォルダー内で実行されています。\nZIPファイルを展開してから、もう一度起動してください。",
                 "starting_up": "起動中",
+                "finishing_up": "完了。終了処理中です。",
                 "extraction_failed_message": "ROMを抽出できませんでした。詳しくはログを確認してください。",
                 "menu_moved_message": "F1キーで開く従来のメニューバーは廃止されました。\n新しいメニューはEscキーで開くことができます。",
                 "extract_another_prompt": "別のROMの抽出を試しますか？",

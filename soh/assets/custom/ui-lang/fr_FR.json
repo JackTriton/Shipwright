@@ -17731,6 +17731,7 @@
                 "permissions_error_message": "SoH ne dispose pas des permissions nécessaires pour accéder aux fichiers.\nVeuillez le déplacer dans un dossier disposant de ces permissions, puis le relancer.",
                 "temporary_directory_message": "SoH est exécuté depuis un dossier temporaire.\nVeuillez extraire le fichier .zip, puis le relancer.",
                 "starting_up": "Démarrage",
+                "finishing_up": " Terminé. Finalisation en cours.",
                 "extraction_failed_message": "La ROM n’a pas pu être extraite. Consultez le journal pour plus de détails.",
                 "menu_moved_message": "La barre de menus accessible avec F1 n’existe plus.\nLe nouveau menu s’ouvre désormais avec la touche Échap.",
                 "extract_another_prompt": "Voulez-vous essayer d’extraire une autre ROM ?",

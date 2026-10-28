@@ -2055,7 +2055,7 @@ void SohInputEditorWindow::DrawSetDefaultsButton(uint8_t portIndex) {
 }
 
 void SohInputEditorWindow::DrawElement() {
-    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMonoLarger));
     ImVec4 themeColor = ColorValues.at(THEME_COLOR);
     ImGui::PushStyleColor(ImGuiCol_Tab, ImVec4(themeColor.x, themeColor.y, themeColor.z, 0.8f));
     ImGui::PushStyleColor(ImGuiCol_TabHovered, ImVec4(themeColor.x, themeColor.y, themeColor.z, 0.6f));

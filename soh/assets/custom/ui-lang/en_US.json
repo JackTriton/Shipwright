@@ -17885,6 +17885,7 @@
                 "permissions_error_message": "SoH does not have proper file permissions.\nPlease move it to a folder that does and run again.",
                 "temporary_directory_message": "SoH is running in a temp folder.\nExtract the .zip and run again.",
                 "starting_up": "Starting Up",
+                "finishing_up": " Done. Finishing up.",
                 "extraction_failed_message": "The ROM could not be extracted. Check the log for details.",
                 "menu_moved_message": "The menubar, accessed by hitting F1, no longer exists.\nThe new menu can be accessed by hitting the Esc button instead.",
                 "extract_another_prompt": "Try extracting another ROM?",

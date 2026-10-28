@@ -1669,7 +1669,7 @@ void MapperWindow::DrawElement() {
         }
     }
 
-    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMonoLarger));
 
     DrawDeviceSelector();
     Separator();

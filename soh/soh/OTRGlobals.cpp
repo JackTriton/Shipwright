@@ -333,7 +333,7 @@ OTRGlobals::OTRGlobals() {
         fontJapaneseNormal = CreateFontWithSize(16.0f, "fonts/NotoSansJP-Regular.ttf", true);
         fontJapaneseLarger = CreateFontWithSize(20.0f, "fonts/NotoSansJP-Regular.ttf", true);
         fontJapanese = CreateFontWithSize(24.0f, "fonts/NotoSansJP-Regular.ttf", true);
-        ImGui::GetIO().FontDefault = fontStandardLarger;
+        UpdateGuiFont();
     }
 
     previousImGuiScaleIndex = -1;
@@ -772,6 +772,8 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
         if (!wnd->IsFrameReady()) {
             continue;
         }
+        // Extraction runs before Graph_StartFrame, which normally selects the UI font.
+        UpdateGuiFont();
         gui->StartDraw();
         sohFast3dWindow->StartFrame();
         sohFast3dWindow->RunGuiOnly();
@@ -791,8 +793,9 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                 }
                 extractionTask.reset();
             } else {
-                if (!ImGui::IsPopupOpen("ROM Extraction")) {
-                    ImGui::OpenPopup("ROM Extraction");
+                const char* extractionTitle = Lang::UILabel("ui.text.otrglobals.rom_extraction_title", "ROM Extraction");
+                if (!ImGui::IsPopupOpen(extractionTitle)) {
+                    ImGui::OpenPopup(extractionTitle);
                 }
                 ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 8.0f));
@@ -800,16 +803,20 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                 ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(color.x, color.y, color.z, 0.6f));
                 ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(color.x, color.y, color.z, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.3f));
-                if (ImGui::BeginPopupModal("ROM Extraction", NULL,
+                if (ImGui::BeginPopupModal(extractionTitle, NULL,
                                            ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize |
                                                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
                                                ImGuiWindowFlags_NoSavedSettings)) {
                     float progress = (totalExtract > 0.0f ? (float)extractCount / (float)totalExtract : 0) * 100.0f;
-                    auto filename = std::filesystem::path(file).filename().string();
-                    ImGui::Text("Extracting %s...%s", filename.c_str(),
-                                roundf(progress) == 100.0f ? " Done. Finishing up." : "");
+                    const auto filenameUtf8 = std::filesystem::path(file).filename().u8string();
+                    const std::string filename(reinterpret_cast<const char*>(filenameUtf8.data()), filenameUtf8.size());
+                    ImGui::Text(Lang::UIFormat("ui.text.otrglobals.extracting_file", "Extracting %s...%s"),
+                                filename.c_str(), roundf(progress) == 100.0f
+                                                      ? Lang::UIString("ui.text.otrglobals.finishing_up", " Done. Finishing up.")
+                                                      : "");
                     std::string overlay =
-                        extractCount > 0 ? spdlog::fmt_lib::format("{:.0f}%", progress) : "Starting Up";
+                        extractCount > 0 ? spdlog::fmt_lib::format("{:.0f}%", progress)
+                                         : Lang::UIString("ui.text.otrglobals.starting_up", "Starting Up");
                     ImGui::ProgressBar(progress / 100.0f, ImVec2(600.0f, 50.0f), overlay.c_str());
                     ImGui::EndPopup();
                 }
@@ -1038,6 +1045,14 @@ OTRGlobals::~OTRGlobals() {
 ImFont* OTRGlobals::GetGuiFont(ImFont* westernFont) const {
     if (Lang::GetUIResourceLanguage() != LANGUAGE_JPN || fontJapaneseLarger == nullptr || westernFont == nullptr) {
         return westernFont;
+    }
+    // FontSize is populated when ImGui builds the atlas. Startup dialogs can
+    // select a font earlier, so recognize our configured sizes by identity too.
+    if (westernFont == fontMonoLargest || westernFont == fontStandardLargest) {
+        return fontJapanese;
+    }
+    if (westernFont == fontMonoLarger || westernFont == fontStandardLarger) {
+        return fontJapaneseLarger;
     }
     if (westernFont->FontSize <= 16.0f) {
         return fontJapaneseNormal;

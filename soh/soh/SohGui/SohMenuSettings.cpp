@@ -134,6 +134,7 @@ void SohMenu::AddMenuSettings() {
 #if not defined(__SWITCH__) and not defined(__WIIU__)
     AddWidget(path, "Menu Controller Navigation", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_IMGUI_CONTROLLER_NAV)
+        .Translation("ui.widgets.gControlNav")
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip(
             Lang::UIString("ui.widgets.gControlNav.description",
@@ -364,6 +365,7 @@ void SohMenu::AddMenuSettings() {
             Lang::UIString("ui.panels.sohmenusettings.toggle_fullscreen.description", "Toggles Fullscreen On/Off.")));
     AddWidget(path, "Internal Resolution", WIDGET_CVAR_SLIDER_FLOAT)
         .CVar(CVAR_INTERNAL_RESOLUTION)
+        .Translation("ui.widgets.gInternalResolution")
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
             Ship::Context::GetRawInstance()->GetWindow()->SetResolutionMultiplier(
@@ -390,6 +392,7 @@ void SohMenu::AddMenuSettings() {
 #ifndef __WIIU__
     AddWidget(path, "Anti-aliasing (MSAA)", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_MSAA_VALUE)
+        .Translation("ui.widgets.gMSAAValue")
         .RaceDisable(false)
         .Callback([](WidgetInfo& info) {
             Ship::Context::GetRawInstance()->GetWindow()->SetMsaaLevel(CVarGetInteger(CVAR_MSAA_VALUE, 1));
@@ -434,6 +437,7 @@ void SohMenu::AddMenuSettings() {
         .RaceDisable(false);
     AddWidget(path, "Enable Vsync", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_VSYNC_ENABLED)
+        .Translation("ui.widgets.gVsyncEnabled")
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) { info.isHidden = mSohMenu->disabledMap.at(DISABLE_FOR_NO_VSYNC).active; })
         .Options(
@@ -443,6 +447,7 @@ void SohMenu::AddMenuSettings() {
                 .DefaultValue(true));
     AddWidget(path, "Windowed Fullscreen", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_SDL_WINDOWED_FULLSCREEN)
+        .Translation("ui.widgets.gSdlWindowedFullscreen")
         .RaceDisable(false)
         .PreFunc([](WidgetInfo& info) {
             info.isHidden = mSohMenu->disabledMap.at(DISABLE_FOR_NO_WINDOWED_FULLSCREEN).active;
@@ -451,6 +456,7 @@ void SohMenu::AddMenuSettings() {
             Lang::UIString("ui.widgets.gSdlWindowedFullscreen.description", "Enables Windowed Fullscreen Mode.")));
     AddWidget(path, "Allow multi-windows", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENABLE_MULTI_VIEWPORTS)
+        .Translation("ui.widgets.gEnableMultiViewports")
         .RaceDisable(false)
         .PreFunc(
             [](WidgetInfo& info) { info.isHidden = mSohMenu->disabledMap.at(DISABLE_FOR_NO_MULTI_VIEWPORT).active; })
@@ -461,6 +467,7 @@ void SohMenu::AddMenuSettings() {
                      .DefaultValue(true));
     AddWidget(path, "Texture Filter (Needs reload)", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_TEXTURE_FILTER)
+        .Translation("ui.widgets.gTextureFilter")
         .RaceDisable(false)
         .Options(
             ComboboxOptions()

@@ -5,7 +5,7 @@
 void SohStatsWindow::DrawElement() {
     const float framerate = ImGui::GetIO().Framerate;
     const float deltatime = ImGui::GetIO().DeltaTime;
-    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMonoLarger));
     ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0, 0, 0, 0));
 
 #if defined(_WIN32)

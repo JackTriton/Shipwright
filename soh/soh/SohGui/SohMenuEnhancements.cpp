@@ -346,6 +346,7 @@ void SohMenu::AddMenuEnhancements() {
                          "because SoH isn't limited to N64 hardware.")));
     AddWidget(path, "Simulated Input Lag: %d frames", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_SIMULATED_INPUT_LAG)
+        .Translation("ui.widgets.gSimulatedInputLag")
         .Options(
             IntSliderOptions()
                 .Min(0)
@@ -960,6 +961,7 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Misc.", WIDGET_SEPARATOR_TEXT).Translation("ui.panels.sohmenuenhancements.misc_label");
     AddWidget(path, "N64 Mode", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_LOW_RES_MODE)
+        .Translation("ui.widgets.gLowResMode")
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip(Lang::UIString(
             "ui.widgets.gLowResMode.description",

@@ -790,13 +790,13 @@ bool InputString(const char* label, std::string* value, const InputOptions& opti
     if (labelSize.x != 0) {
         if (options.alignment == ComponentAlignments::Left) {
             if (options.labelPosition == LabelPositions::Above) {
-                ImGui::Text(label, *value->c_str());
+                ImGui::TextUnformatted(label, ImGui::FindRenderedTextEnd(label));
             }
         } else if (options.alignment == ComponentAlignments::Right) {
             if (options.labelPosition == LabelPositions::Above) {
                 ImGui::NewLine();
-                ImGui::SameLine(width - ImGui::CalcTextSize(label).x);
-                ImGui::Text(label, *value->c_str());
+                ImGui::SameLine(width - ImGui::CalcTextSize(label, nullptr, true).x);
+                ImGui::TextUnformatted(label, ImGui::FindRenderedTextEnd(label));
             }
         }
     }
@@ -852,13 +852,13 @@ bool InputInt(const char* label, int32_t* value, const InputOptions& options) {
     float width = (options.size == ImVec2(0, 0)) ? ImGui::GetContentRegionAvail().x : options.size.x;
     if (options.alignment == ComponentAlignments::Left) {
         if (options.labelPosition == LabelPositions::Above) {
-            ImGui::Text(label, *value);
+            ImGui::TextUnformatted(label, ImGui::FindRenderedTextEnd(label));
         }
     } else if (options.alignment == ComponentAlignments::Right) {
         if (options.labelPosition == LabelPositions::Above) {
             ImGui::NewLine();
-            ImGui::SameLine(width - ImGui::CalcTextSize(label).x);
-            ImGui::Text(label, *value);
+            ImGui::SameLine(width - ImGui::CalcTextSize(label, nullptr, true).x);
+            ImGui::TextUnformatted(label, ImGui::FindRenderedTextEnd(label));
         }
     }
     ImGui::SetNextItemWidth(width);
@@ -1220,7 +1220,7 @@ bool BtnSelector(const char* label, int32_t* value, const BtnSelectorOptions& op
     ImGui::PushID(label);
     ImGui::BeginGroup();
     ImGui::AlignTextToFramePadding();
-    ImGui::Text("%s", label);
+    ImGui::TextUnformatted(label, ImGui::FindRenderedTextEnd(label));
     ImGui::BeginDisabled(false);
     PushStyleCombobox(options.color);
     ImGui::BeginChild("ButtonCombo", ImVec2(0, ImGui::GetFrameHeightWithSpacing() + 14.0f), ImGuiChildFlags_None,
@@ -1235,7 +1235,7 @@ bool BtnSelector(const char* label, int32_t* value, const BtnSelectorOptions& op
                 ImGui::SameLine();
             }
             if (UIWidgets::Button(
-                    buttonName.c_str(),
+                    Lang::UILabelVariant("ui.text.sohgui.uiwidgets", buttonName.c_str()),
                     UIWidgets::ButtonOptions()
                         .Tooltip(Lang::UIString("ui.text.sohgui.uiwidgets.remove_this_button_from_the_combination",
                                                 "Remove this button from the combination"))
@@ -1248,7 +1248,9 @@ bool BtnSelector(const char* label, int32_t* value, const BtnSelectorOptions& op
             ImGui::SameLine();
         }
     }
-    if (UIWidgets::Button("+", UIWidgets::ButtonOptions({ { .tooltip = "Add a button to the combination" } })
+    if (UIWidgets::Button("+", UIWidgets::ButtonOptions()
+                                   .Tooltip(Lang::UIString("ui.text.sohgui.uiwidgets.add_a_button_to_the_combination",
+                                                           "Add a button to the combination"))
                                    .Size(UIWidgets::Sizes::Inline)
                                    .Color(options.color))) {
         ImGui::OpenPopup("Add Button");
@@ -1257,7 +1259,7 @@ bool BtnSelector(const char* label, int32_t* value, const BtnSelectorOptions& op
         UIWidgets::PushStyleMenuItem();
         for (const auto& [buttonName, buttonMask] : buttonMap) {
             if (!(currentValue & buttonMask)) {
-                if (ImGui::MenuItem(buttonName.c_str())) {
+                if (ImGui::MenuItem(Lang::UILabelVariant("ui.text.sohgui.uiwidgets", buttonName.c_str()))) {
                     currentValue |= buttonMask;
                     dirty = true;
                 }

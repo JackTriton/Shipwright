@@ -17745,6 +17745,7 @@
                 "permissions_error_message": "SoH verfügt nicht über die erforderlichen Dateizugriffsrechte.\nBitte verschiebe es in einen Ordner mit den erforderlichen Rechten und starte es erneut.",
                 "temporary_directory_message": "SoH wird in einem temporären Ordner ausgeführt.\nBitte entpacke die .zip-Datei und starte es erneut.",
                 "starting_up": "Wird gestartet",
+                "finishing_up": " Fertig. Wird abgeschlossen.",
                 "extraction_failed_message": "Die ROM konnte nicht extrahiert werden. Einzelheiten findest du im Protokoll.",
                 "menu_moved_message": "Die bisher mit F1 aufrufbare Menüleiste gibt es nicht mehr.\nDas neue Menü kannst du stattdessen mit der Esc-Taste öffnen.",
                 "extract_another_prompt": "Möchtest du versuchen, eine andere ROM zu extrahieren?",

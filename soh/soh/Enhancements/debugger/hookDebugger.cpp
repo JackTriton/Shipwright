@@ -119,7 +119,7 @@ void HookDebuggerWindow::DrawElement() {
         hookOptCollapseAll = true;
     }
 
-    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMonoLarger));
 
     for (auto& [hookName, _] : hookData) {
         if (doingCollapseOrExpand) {

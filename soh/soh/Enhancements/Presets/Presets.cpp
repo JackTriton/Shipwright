@@ -323,7 +323,7 @@ void DrawSectionCheck(const std::string& name, bool empty, bool* pointer, std::s
         UIWidgets::PopStyleButton();
         ImGui::PopStyleColor();
     } else {
-        ImGui::PushFont(OTRGlobals::Instance->fontMono);
+        ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMono));
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (ImGui::GetStyle().FramePadding.y));
         UIWidgets::Checkbox(("##" + name + section).c_str(), pointer,
                             { .defaultValue = true, .padding = { 6.0f, 6.0f }, .color = THEME_COLOR });
@@ -524,7 +524,7 @@ void DrawEditPresetPopup() {
 }
 
 void PresetsCustomWidget(WidgetInfo& info) {
-    ImGui::PushFont(OTRGlobals::Instance->fontMonoLarger);
+    ImGui::PushFont(OTRGlobals::Instance->GetGuiFont(OTRGlobals::Instance->fontMonoLarger));
     if (UIWidgets::Button(
             Lang::UILabel("ui.text.enhancements.presets.presets.new_preset", "New Preset"),
             UIWidgets::ButtonOptions({ { .disabled = (CVarGetInteger(CVAR_SETTING("DisableChanges"), 0) != 0),
