@@ -15,9 +15,17 @@ endfunction()
 # A resource-only change must also reach the executable directory, even when
 # the executable does not relink (notably Visual Studio's Debug/Release dirs).
 function(soh_stage_port_archive target archive)
+    # Windows output paths contain TARGET_GENEX_EVAL expressions. Resolve them
+    # in a generated script so staging does not acquire a dependency on the
+    # executable that already depends on this target.
+    set(stage_script "${CMAKE_CURRENT_BINARY_DIR}/generated/${target}-port-archive-$<CONFIG>.cmake")
+    file(GENERATE OUTPUT "${stage_script}" CONTENT
+        "file(MAKE_DIRECTORY [==[$<TARGET_FILE_DIR:${target}>]==])
+file(COPY_FILE [==[${archive}]==] [==[$<TARGET_FILE_DIR:${target}>/soh.o2r]==] ONLY_IF_DIFFERENT)
+"
+    )
     add_custom_target(${target}_port_archive
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:${target}>"
-        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${archive}" "$<TARGET_FILE_DIR:${target}>/soh.o2r"
+        COMMAND "${CMAKE_COMMAND}" -P "${stage_script}"
         DEPENDS GenerateSohOtr
         COMMENT "Staging current soh.o2r beside ${target}..."
         VERBATIM
