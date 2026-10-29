@@ -21,8 +21,7 @@ Lang::TranslationCatalog& GetGameTextCatalog() {
 
 std::string GetGameItemUIFontText() {
     const auto& catalog = GetGameTextCatalog();
-    return catalog.GetFontText("messages.vanilla.item_names.") +
-           catalog.GetFontText("messages.randomizer.item_names.");
+    return catalog.GetFontText("messages.vanilla.item_names.") + catalog.GetFontText("messages.randomizer.item_names.");
 }
 
 std::string DecodeGameText(const std::string& text) {

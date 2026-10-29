@@ -76,8 +76,8 @@ int16_t GameMessage_GetDrawOffset(uint16_t decodedIndex) {
                : 0;
 }
 float GameMessage_GetDrawScale(uint16_t decodedIndex) {
-    return MessageLanguage_UsesUnicode() && MessageLanguage_UsesJapaneseLayout() &&
-                   decodedIndex < latinGlyphs.size() && latinGlyphs[decodedIndex]
+    return MessageLanguage_UsesUnicode() && MessageLanguage_UsesJapaneseLayout() && decodedIndex < latinGlyphs.size() &&
+                   latinGlyphs[decodedIndex]
                ? JapaneseMessageLayout::LatinGlyphScale
                : 1.0f;
 }
@@ -123,8 +123,8 @@ void GameMessage_AlignPage(const uint8_t* decoded, size_t length, const float* l
     const auto finishLine = [&] {
         const int width = right - left;
         const int remaining = std::max(0, JapaneseMessageLayout::LineWidth(false) - width);
-        const auto start = static_cast<int16_t>(
-            baseX + (alignment == MESSAGE_ALIGNMENT_RIGHT ? remaining : remaining / 2) - left);
+        const auto start =
+            static_cast<int16_t>(baseX + (alignment == MESSAGE_ALIGNMENT_RIGHT ? remaining : remaining / 2) - left);
         lineStarts[lineStart] = start;
         if (choice >= 0 && choice < static_cast<int>(choiceShifts.size())) {
             // Preserve the native distance between the cursor and the option's
@@ -170,8 +170,9 @@ void GameMessage_AlignPage(const uint8_t* decoded, size_t length, const float* l
             // buffer; all other variables are already ordinary glyphs here.
             const size_t legacyIndex = code - ' ';
             const float legacy = legacyIndex < legacyWidthCount ? legacyWidths[legacyIndex] : 16;
-            pen += code == MESSAGE_NAME ? static_cast<int>(16 * scale)
-                                        : static_cast<int>(GameMessage_GetScaledAdvance(static_cast<uint16_t>(index), legacy, scale));
+            pen += code == MESSAGE_NAME
+                       ? static_cast<int>(16 * scale)
+                       : static_cast<int>(GameMessage_GetScaledAdvance(static_cast<uint16_t>(index), legacy, scale));
             right = pen;
         }
         index += size;

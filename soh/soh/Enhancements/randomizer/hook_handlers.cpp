@@ -1349,7 +1349,7 @@ void RandomizerOnVanillaBehaviorHandler(GIVanillaBehavior id, bool* should, va_l
 
                 if (item00->itemEntry.modIndex == MOD_NONE) {
                     Notification::Emit(Notification::MakePickup(SohUtils::GetItemName(item00->itemEntry.itemId),
-                                                               GetTextureForItemId(item00->itemEntry.itemId)));
+                                                                GetTextureForItemId(item00->itemEntry.itemId)));
                 } else if (item00->itemEntry.modIndex == MOD_RANDOMIZER) {
                     const auto& item = Rando::StaticData::RetrieveItem((RandomizerGet)item00->itemEntry.getItemId);
                     Notification::Emit(Notification::MakePickup(item.GetNameForUI()));

@@ -793,7 +793,8 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                 }
                 extractionTask.reset();
             } else {
-                const char* extractionTitle = Lang::UILabel("ui.text.otrglobals.rom_extraction_title", "ROM Extraction");
+                const char* extractionTitle =
+                    Lang::UILabel("ui.text.otrglobals.rom_extraction_title", "ROM Extraction");
                 if (!ImGui::IsPopupOpen(extractionTitle)) {
                     ImGui::OpenPopup(extractionTitle);
                 }
@@ -811,12 +812,13 @@ void OTRGlobals::RunExtract(int argc, char* argv[]) {
                     const auto filenameUtf8 = std::filesystem::path(file).filename().u8string();
                     const std::string filename(reinterpret_cast<const char*>(filenameUtf8.data()), filenameUtf8.size());
                     ImGui::Text(Lang::UIFormat("ui.text.otrglobals.extracting_file", "Extracting %s...%s"),
-                                filename.c_str(), roundf(progress) == 100.0f
-                                                      ? Lang::UIString("ui.text.otrglobals.finishing_up", " Done. Finishing up.")
-                                                      : "");
-                    std::string overlay =
-                        extractCount > 0 ? spdlog::fmt_lib::format("{:.0f}%", progress)
-                                         : Lang::UIString("ui.text.otrglobals.starting_up", "Starting Up");
+                                filename.c_str(),
+                                roundf(progress) == 100.0f
+                                    ? Lang::UIString("ui.text.otrglobals.finishing_up", " Done. Finishing up.")
+                                    : "");
+                    std::string overlay = extractCount > 0
+                                              ? spdlog::fmt_lib::format("{:.0f}%", progress)
+                                              : Lang::UIString("ui.text.otrglobals.starting_up", "Starting Up");
                     ImGui::ProgressBar(progress / 100.0f, ImVec2(600.0f, 50.0f), overlay.c_str());
                     ImGui::EndPopup();
                 }

@@ -19,7 +19,7 @@ jobs:
       with:
         max-size: "2G"
         evict-old-files: job
-        save: ${{ github.event_name == 'push' }}
+        save: ${{ github.ref_name == github.event.repository.default_branch }}
         key: ${{ runner.os }}-otr-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-otr-ccache-${{ github.ref }}
@@ -58,25 +58,19 @@ jobs:
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2.23
       with:
-        key: ${{ runner.os }}-universal-ccache-${{ github.ref }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-universal-ccache-${{ github.ref }}
-          ${{ runner.os }}-universal-ccache
+        key: ${{ runner.os }} # ccache-macos-{{ timestamp }}
         max-size: "2G"
         evict-old-files: job
-        save: ${{ github.event_name == 'push' }}
+        save: ${{ github.ref_name == github.event.repository.default_branch }}
     - name: Download soh.o2r
       uses: actions/download-artifact@v8
       with:
         name: soh.o2r
-        path: prebuilt
-    - name: Configure SoH
-      run: |
-        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DBUILD_REMOTE_CONTROL=1 "-DSOH_PREBUILT_PORT_ARCHIVE=${{ github.workspace }}/prebuilt/soh.o2r"
+        path: build-cmake/soh
     - name: Build SoH
-      run: cmake --build build-cmake -j
-    - name: Package SoH
       run: |
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DBUILD_REMOTE_CONTROL=1
+        cmake --build build-cmake -j
         # Spotlight indexing the disk image CPack just made keeps hdiutil from
         # unmounting it, failing the build with "Resource busy"
         sudo mdutil -a -i off || true
@@ -117,7 +111,7 @@ jobs:
       with:
         max-size: "2G"
         evict-old-files: job
-        save: ${{ github.event_name == 'push' }}
+        save: ${{ github.ref_name == github.event.repository.default_branch }}
         key: ${{ runner.os }}-${{ matrix.arch }}-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.arch }}-ccache-${{ github.ref }}
@@ -172,26 +166,24 @@ jobs:
       uses: actions/download-artifact@v8
       with:
         name: soh.o2r
-        path: prebuilt
-    - name: Configure SoH
+        path: build-cmake/soh
+    - name: Build SoH
+      run: |
+        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_REMOTE_CONTROL=1
+        cmake --build build-cmake --config Release -j4
+        (cd build-cmake && cpack -G External)
+
+        mv build-cmake/*.appimage soh.appimage
       env:
         CC: gcc-12
         CXX: g++-12
-      run: |
-        cmake --no-warn-unused-cli -H. -Bbuild-cmake -GNinja -DCMAKE_BUILD_TYPE:STRING=Release -DBUILD_REMOTE_CONTROL=1 -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache "-DSOH_PREBUILT_PORT_ARCHIVE=${{ github.workspace }}/prebuilt/soh.o2r"
-    - name: Build SoH
-      run: cmake --build build-cmake --config Release -j4
-    - name: Package SoH
-      run: |
-        (cd build-cmake && cpack -G External)
-        mv build-cmake/*.appimage soh.appimage
     - name: Upload build
       uses: actions/upload-artifact@v7
       with:
         name: soh-linux-${{ matrix.arch }}
         path: soh.appimage
     - name: Save Cache deps folder
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.ref_name == github.event.repository.default_branch }}
       uses: actions/cache/save@v5
       with:
         key: ${{ steps.restore-cache-deps.outputs.cache-primary-key }}
@@ -214,7 +206,7 @@ jobs:
       with:
         max-size: "2G"
         evict-old-files: job
-        save: ${{ github.event_name == 'push' }}
+        save: ${{ github.ref_name == github.event.repository.default_branch }}
         key: ${{ runner.os }}-ccache-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-ccache-${{ github.ref }}
@@ -236,21 +228,18 @@ jobs:
       uses: actions/download-artifact@v8
       with:
         name: soh.o2r
-        path: prebuilt
-    - name: Configure SoH
+        path: build-windows/soh
+    - name: Build SoH
       env:
         VCPKG_ROOT: ${{github.workspace}}/vcpkg
       run: |
-        $env:PATH = "$env:USERPROFILE/.cargo/bin;$env:PATH"
-        cmake -S . -B build-windows -G Ninja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DBUILD_REMOTE_CONTROL=1 "-DVCPKG_ROOT=${{ github.workspace }}/vcpkg" "-DSOH_PREBUILT_PORT_ARCHIVE=${{ github.workspace }}/prebuilt/soh.o2r"
-    - name: Build SoH
-      # Compile independent files after an error so one CI run reports all failures.
-      run: cmake --build build-windows --config Release --parallel 10 -- -k 0
-    - name: Package SoH
-      working-directory: build-windows
-      run: cpack
-    - name: Rename package
-      run: Move-Item -Path _packages/*.zip -Destination _packages/soh-windows.zip
+        set $env:PATH="$env:USERPROFILE/.cargo/bin;$env:PATH"
+        cmake -S . -B build-windows -G Ninja -DCMAKE_MAKE_PROGRAM=ninja -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DBUILD_REMOTE_CONTROL=1
+        cmake --build build-windows --config Release --parallel 10
+
+        (cd build-windows && cpack)
+        cd ..
+        mv _packages/*.zip _packages/soh-windows.zip
     - name: Unzip package
       run: Expand-Archive -Path _packages/soh-windows.zip -DestinationPath soh-windows
     - name: Upload build
@@ -259,7 +248,7 @@ jobs:
         name: soh-windows
         path: soh-windows
     - name: Save Cache VCPKG folder
-      if: ${{ github.event_name == 'push' }}
+      if: ${{ github.ref_name == github.event.repository.default_branch }}
       uses: actions/cache/save@v5
       with:
         key: ${{ steps.restore-cache-vcpkg.outputs.cache-primary-key }}

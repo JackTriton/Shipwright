@@ -1593,8 +1593,7 @@ bool Message_DecodeName(PlayState* play, s16* decodedBufPosPtr, s32* charTexIdxP
         return true;
     }
 
-    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL &&
-        !MessageLanguage_IsJapanese()) {
+    if (ResourceMgr_GetGameRegion(0) == GAME_REGION_PAL && !MessageLanguage_IsJapanese()) {
         if (gSaveContext.ship.filenameLanguage == NAME_LANGUAGE_PAL) {
             for (i = 0; i < playerNameLen; i++) {
                 curChar2 = gSaveContext.playerName[i];
@@ -2780,8 +2779,10 @@ void Message_OpenText(PlayState* play, u16 textId) {
                 R_TEXT_INIT_XPOS = 65;
             }
         }
-        msgCtx->msgLength = font->msgLength = GetEquipNowMessage(font->msgBuf, (char*)font->msgOffset, sizeof(font->msgBuf));
-        if (MessageLanguage_UsesUnicode()) Message_SetUnicodeLayout();
+        msgCtx->msgLength = font->msgLength =
+            GetEquipNowMessage(font->msgBuf, (char*)font->msgOffset, sizeof(font->msgBuf));
+        if (MessageLanguage_UsesUnicode())
+            Message_SetUnicodeLayout();
     } else {
         if (MessageLanguage_IsJapanese()) {
             Message_FindMessageJPN(play, textId);

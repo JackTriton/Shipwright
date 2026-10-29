@@ -66,8 +66,8 @@ const UIFontGlyphs::Glyph& UIFontGlyphs::Get(unsigned int codepoint) {
                     for (int y = y0; y < y1; ++y)
                         for (int x = x0; x < x1; ++x)
                             sum += atlas[(top + y) * atlasWidth + left + x];
-                    const size_t pixelIndex = static_cast<size_t>(row) * static_cast<size_t>(result.width) +
-                                              static_cast<size_t>(column);
+                    const size_t pixelIndex =
+                        static_cast<size_t>(row) * static_cast<size_t>(result.width) + static_cast<size_t>(column);
                     const auto samples = static_cast<unsigned int>((x1 - x0) * (y1 - y0));
                     result.pixels[pixelIndex] = static_cast<unsigned char>(sum / samples);
                 }
@@ -105,8 +105,8 @@ const UIFontGlyphs::Cell& UIFontGlyphs::GetCell(unsigned int codepoint) {
                 for (int dx = 0; dx < 2; ++dx) {
                     const int px = left + dx, py = top + dy;
                     if (px >= 0 && px < glyph.width && py >= 0 && py < glyph.height) {
-                        const size_t pixelIndex = static_cast<size_t>(py) * static_cast<size_t>(glyph.width) +
-                                                  static_cast<size_t>(px);
+                        const size_t pixelIndex =
+                            static_cast<size_t>(py) * static_cast<size_t>(glyph.width) + static_cast<size_t>(px);
                         alpha += glyph.pixels[pixelIndex] * (dx ? fractionX : 1.0f - fractionX) *
                                  (dy ? fractionY : 1.0f - fractionY);
                     }

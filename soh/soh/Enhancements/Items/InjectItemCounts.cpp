@@ -13,9 +13,8 @@ extern "C" {
 }
 
 void BuildSkulltulaMessage(uint16_t* textId, bool* loadFromMessageTable) {
-    CustomMessage msg = CustomMessages::CreateMessage(
-        "enhancements.inject_item_counts.build_skulltula_message.0",
-        TEXTBOX_TYPE_BLUE);
+    CustomMessage msg =
+        CustomMessages::CreateMessage("enhancements.inject_item_counts.build_skulltula_message.0", TEXTBOX_TYPE_BLUE);
     // The freeze text cannot be manually dismissed and must be auto-dismissed.
     // This is fine and even wanted when skull tokens are not shuffled, but when
     // when they are shuffled we don't want to be able to manually dismiss the box.
@@ -48,9 +47,8 @@ void BuildHeartContainerMessage(uint16_t* textId, bool* loadFromMessageTable) {
 }
 
 void BuildHeartPieceMessage(uint16_t* textId, bool* loadFromMessageTable) {
-    CustomMessage msg = CustomMessages::CreateMessage(
-        "enhancements.inject_item_counts.build_heart_piece_message.0",
-        TEXTBOX_TYPE_BLUE);
+    CustomMessage msg =
+        CustomMessages::CreateMessage("enhancements.inject_item_counts.build_heart_piece_message.0", TEXTBOX_TYPE_BLUE);
     msg.Replace("[[heartPieceCount]]", std::to_string(gSaveContext.ship.stats.heartPieces + 1));
     msg.AutoFormat(ITEM_HEART_PIECE);
     msg.LoadIntoFont();
